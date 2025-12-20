@@ -1,0 +1,369 @@
+import React, { useState, useEffect } from 'react';
+import { formatDate } from '../utils/date';
+import { supabase } from '../supabaseClient';
+import { useSettings } from '../context/SettingsContext';
+import {
+    CreditCard, Search, Filter, DollarSign, Clock, CheckCircle,
+    AlertCircle, Phone, Car, Calendar, X, Save, TrendingUp
+} from 'lucide-react';
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
+import Modal from '../components/ui/Modal';
+import Input from '../components/ui/Input';
+import toast from 'react-hot-toast';
+
+const Payments = () => {
+    const { formatCurrency } = useSettings();
+    const [rentals, setRentals] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [selectedRental, setSelectedRental] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [paymentData, setPaymentData] = useState({
+        payment_status: '',
+        amount_paid: 0
+    });
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        fetchRentals();
+    }, []);
+
+    const fetchRentals = async () => {
+        try {
+            setLoading(true);
+            const { data, error } = await supabase
+                .from('rentals')
+                .select(`
+                    *,
+                    cars (make, model, license_plate)
+                `)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            setRentals(data || []);
+        } catch (error) {
+            console.error('Error fetching rentals:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getPaymentStatus = (rental) => {
+        if (!rental.payment_status || rental.payment_status === 'pending') {
+            return { status: 'pending', label: 'Pending', variant: 'warning' };
+        } else if (rental.payment_status === 'partial') {
+            return { status: 'partial', label: 'Partial', variant: 'secondary' };
+        } else if (rental.payment_status === 'paid') {
+            return { status: 'paid', label: 'Paid', variant: 'success' };
+        }
+        return { status: 'pending', label: 'Pending', variant: 'warning' };
+    };
+
+    const openPaymentModal = (rental) => {
+        setSelectedRental(rental);
+        setPaymentData({
+            payment_status: rental.payment_status || 'pending',
+            amount_paid: rental.amount_paid || 0
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleSavePayment = async () => {
+        if (!selectedRental) return;
+        setSaving(true);
+
+        try {
+            const { error } = await supabase
+                .from('rentals')
+                .update({
+                    payment_status: paymentData.payment_status,
+                    amount_paid: paymentData.amount_paid
+                })
+                .eq('id', selectedRental.id);
+
+            if (error) throw error;
+
+            toast.success('Payment updated!');
+            setIsModalOpen(false);
+            fetchRentals();
+        } catch (error) {
+            toast.error('Failed to update payment');
+            console.error(error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // Filter rentals
+    const filteredRentals = rentals.filter(rental => {
+        const matchesSearch =
+            rental.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            rental.customer_phone?.includes(searchQuery) ||
+            rental.cars?.license_plate?.toLowerCase().includes(searchQuery.toLowerCase());
+
+        if (!matchesSearch) return false;
+
+        if (filterStatus === 'all') return true;
+
+        const status = rental.payment_status || 'pending';
+        return status === filterStatus;
+    });
+
+    // Calculate stats
+    const stats = {
+        totalDue: rentals.reduce((sum, r) => sum + (Number(r.total_amount) || 0), 0),
+        totalCollected: rentals.reduce((sum, r) => sum + (Number(r.amount_paid) || 0), 0),
+        pendingCount: rentals.filter(r => !r.payment_status || r.payment_status === 'pending').length,
+        paidCount: rentals.filter(r => r.payment_status === 'paid').length
+    };
+    stats.outstanding = stats.totalDue - stats.totalCollected;
+
+    return (
+        <div className="space-y-6">
+            {/* Header */}
+            <div>
+                <h1 className="text-3xl font-bold text-foreground">Payments</h1>
+                <p className="text-muted-foreground mt-1">Track and manage rental payments</p>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card className="p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                            <DollarSign size={20} className="text-blue-600" />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalDue)}</p>
+                            <p className="text-xs text-muted-foreground">Total Billed</p>
+                        </div>
+                    </div>
+                </Card>
+                <Card className="p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                            <CheckCircle size={20} className="text-emerald-600" />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold text-emerald-600">{formatCurrency(stats.totalCollected)}</p>
+                            <p className="text-xs text-muted-foreground">Collected</p>
+                        </div>
+                    </div>
+                </Card>
+                <Card className="p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                            <Clock size={20} className="text-amber-600" />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold text-amber-600">{formatCurrency(stats.outstanding)}</p>
+                            <p className="text-xs text-muted-foreground">Outstanding</p>
+                        </div>
+                    </div>
+                </Card>
+                <Card className="p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                            <TrendingUp size={20} className="text-purple-600" />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold text-foreground">{stats.paidCount}/{rentals.length}</p>
+                            <p className="text-xs text-muted-foreground">Paid Rentals</p>
+                        </div>
+                    </div>
+                </Card>
+            </div>
+
+            {/* Search & Filter */}
+            <Card className="p-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1 relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search by customer, phone, or plate..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full h-10 rounded-md border border-input bg-background px-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        {['all', 'pending', 'partial', 'paid'].map(status => (
+                            <button
+                                key={status}
+                                onClick={() => setFilterStatus(status)}
+                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all capitalize ${filterStatus === status
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-background border border-input text-muted-foreground hover:bg-muted'
+                                    }`}
+                            >
+                                {status}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </Card>
+
+            {/* Table */}
+            <Card>
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b border-border">
+                                <th className="text-left p-4 font-medium text-muted-foreground text-sm">CUSTOMER</th>
+                                <th className="text-left p-4 font-medium text-muted-foreground text-sm">VEHICLE</th>
+                                <th className="text-left p-4 font-medium text-muted-foreground text-sm">DATES</th>
+                                <th className="text-left p-4 font-medium text-muted-foreground text-sm">TOTAL</th>
+                                <th className="text-left p-4 font-medium text-muted-foreground text-sm">PAID</th>
+                                <th className="text-left p-4 font-medium text-muted-foreground text-sm">BALANCE</th>
+                                <th className="text-left p-4 font-medium text-muted-foreground text-sm">STATUS</th>
+                                <th className="text-left p-4 font-medium text-muted-foreground text-sm">ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan="8" className="p-12 text-center text-muted-foreground">Loading...</td>
+                                </tr>
+                            ) : filteredRentals.length === 0 ? (
+                                <tr>
+                                    <td colSpan="8" className="p-12 text-center">
+                                        <CreditCard size={40} className="mx-auto text-muted-foreground/40 mb-3" />
+                                        <p className="text-muted-foreground">No payments found</p>
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredRentals.map((rental) => {
+                                    const paymentStatus = getPaymentStatus(rental);
+                                    const totalAmount = Number(rental.total_amount) || 0;
+                                    const amountPaid = Number(rental.amount_paid) || 0;
+                                    const balance = totalAmount - amountPaid;
+
+                                    return (
+                                        <tr key={rental.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                                            <td className="p-4">
+                                                <div>
+                                                    <p className="font-medium text-foreground">{rental.customer_name}</p>
+                                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                        <Phone size={10} /> {rental.customer_phone}
+                                                    </p>
+                                                </div>
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="flex items-center gap-2">
+                                                    <Car size={14} className="text-muted-foreground" />
+                                                    <div>
+                                                        <p className="text-sm text-foreground">{rental.cars?.make} {rental.cars?.model}</p>
+                                                        <p className="text-xs text-muted-foreground">{rental.cars?.license_plate}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="text-sm text-foreground">
+                                                    {formatDate(rental.start_date)} - {formatDate(rental.end_date)}
+                                                </div>
+                                            </td>
+                                            <td className="p-4">
+                                                <span className="font-medium text-foreground">{formatCurrency(totalAmount)}</span>
+                                            </td>
+                                            <td className="p-4">
+                                                <span className="text-emerald-600 font-medium">{formatCurrency(amountPaid)}</span>
+                                            </td>
+                                            <td className="p-4">
+                                                <span className={`font-medium ${balance > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                    {formatCurrency(balance)}
+                                                </span>
+                                            </td>
+                                            <td className="p-4">
+                                                <Badge variant={paymentStatus.variant}>
+                                                    {paymentStatus.label}
+                                                </Badge>
+                                            </td>
+                                            <td className="p-4">
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => openPaymentModal(rental)}
+                                                >
+                                                    Update
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
+
+            {/* Payment Modal */}
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title={`Update Payment - ${selectedRental?.customer_name}`}
+            >
+                {selectedRental && (
+                    <div className="space-y-4">
+                        <div className="p-4 bg-muted/50 rounded-lg">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm text-muted-foreground">Total Amount</span>
+                                <span className="font-bold text-lg">{formatCurrency(selectedRental.total_amount)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm text-muted-foreground">
+                                <span>{selectedRental.cars?.make} {selectedRental.cars?.model}</span>
+                                <span>{formatDate(selectedRental.start_date)} - {formatDate(selectedRental.end_date)}</span>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Payment Status</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {['pending', 'partial', 'paid'].map(status => (
+                                    <button
+                                        key={status}
+                                        onClick={() => setPaymentData({ ...paymentData, payment_status: status })}
+                                        className={`p-3 rounded-lg border-2 transition-all capitalize ${paymentData.payment_status === status
+                                            ? 'border-primary bg-primary/5'
+                                            : 'border-border hover:border-muted-foreground/30'
+                                            }`}
+                                    >
+                                        {status}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Amount Paid</label>
+                            <input
+                                type="number"
+                                value={paymentData.amount_paid}
+                                onChange={(e) => setPaymentData({ ...paymentData, amount_paid: e.target.value })}
+                                className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                                placeholder="Enter amount paid"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Balance: {formatCurrency((selectedRental.total_amount || 0) - paymentData.amount_paid)}
+                            </p>
+                        </div>
+
+                        <div className="flex gap-3 pt-4">
+                            <Button variant="ghost" onClick={() => setIsModalOpen(false)} className="flex-1">
+                                Cancel
+                            </Button>
+                            <Button onClick={handleSavePayment} isLoading={saving} className="flex-1">
+                                <Save size={16} className="mr-2" /> Save Payment
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+        </div>
+    );
+};
+
+export default Payments;
