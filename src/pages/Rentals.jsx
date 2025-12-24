@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { formatDate } from '../utils/date';
-import { supabase } from '../supabaseClient';
+import { rentalsApi, carsApi } from '../api/client';
+// Removed: import { supabase } from '../supabaseClient';
 import { useSettings } from '../context/SettingsContext';
 import { Plus, Search, Calendar, Phone, CheckCircle, XCircle, Clock, Filter, FileText, ChevronDown, ChevronUp, CreditCard, IdCard, Car as CarIcon, Eye } from 'lucide-react';
 import Modal from '../components/ui/Modal';
@@ -57,20 +58,7 @@ const Rentals = () => {
     const fetchRentals = async () => {
         try {
             setLoading(true);
-            const { data, error } = await supabase
-                .from('rentals')
-                .select(`
-    *,
-    cars(
-        make,
-        model,
-        license_plate,
-        image_url
-    )
-        `)
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
+            const data = await rentalsApi.getAll();
             setRentals(data || []);
         } catch (error) {
             console.error('Error fetching rentals:', error.message);
@@ -80,11 +68,13 @@ const Rentals = () => {
     };
 
     const fetchAvailableCars = async () => {
-        const { data } = await supabase
-            .from('cars')
-            .select('id, make, model, daily_rate, license_plate, status')
-            .order('make');
-        setCars(data || []);
+        try {
+            const data = await carsApi.getAll();
+            // Filter only available cars
+            setCars(data ? data.filter(c => c.status === 'available') : []);
+        } catch (error) {
+            console.error('Error fetching cars:', error);
+        }
     };
 
     const handleChange = (e) => {
@@ -148,23 +138,10 @@ const Rentals = () => {
 
         try {
             // Create rental directly with status='active'
-            const { error: rentalError } = await supabase
-                .from('rentals')
-                .insert([{ ...formData, status: 'active' }])
-                .select()
-                .single();
-
-            if (rentalError) throw rentalError;
+            await rentalsApi.create({ ...formData, status: 'active' });
 
             // Update car status
-            const { error: carError } = await supabase
-                .from('cars')
-                .update({ status: 'rented' })
-                .eq('id', formData.car_id);
-
-            if (carError) {
-                console.error('Car status update failed:', carError);
-            }
+            await carsApi.update(formData.car_id, { status: 'rented' });
 
             // Reset form
             setIsModalOpen(false);
@@ -200,18 +177,10 @@ const Rentals = () => {
 
     const handleStatusUpdate = async (rentalId, carId, newStatus) => {
         try {
-            const { error } = await supabase
-                .from('rentals')
-                .update({ status: newStatus })
-                .eq('id', rentalId);
-
-            if (error) throw error;
+            await rentalsApi.update(rentalId, { status: newStatus });
 
             if (newStatus === 'completed' || newStatus === 'cancelled') {
-                await supabase
-                    .from('cars')
-                    .update({ status: 'available' })
-                    .eq('id', carId);
+                await carsApi.update(carId, { status: 'available' });
             }
 
             fetchRentals();

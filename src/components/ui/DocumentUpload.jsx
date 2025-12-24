@@ -13,7 +13,6 @@ const DocumentUpload = ({
     onUpload, // callback with uploaded URL
     existingUrl = null
 }) => {
-    const [mode, setMode] = useState(null); // 'camera' | 'file' | null
     const [preview, setPreview] = useState(existingUrl);
     const [uploading, setUploading] = useState(false);
     const [cameraActive, setCameraActive] = useState(false);
@@ -26,7 +25,7 @@ const DocumentUpload = ({
     // Start camera
     const startCamera = async () => {
         try {
-            setMode('camera');
+
             setCameraActive(true);
 
             const stream = await navigator.mediaDevices.getUserMedia({
@@ -40,7 +39,7 @@ const DocumentUpload = ({
         } catch (err) {
             console.error('Camera access error:', err);
             alert('Unable to access camera. Please check permissions or use file upload.');
-            setMode(null);
+
             setCameraActive(false);
         }
     };
@@ -52,7 +51,7 @@ const DocumentUpload = ({
             streamRef.current = null;
         }
         setCameraActive(false);
-        setMode(null);
+
     };
 
     // Capture photo from camera
@@ -109,7 +108,6 @@ const DocumentUpload = ({
 
             setPreview(publicUrl);
             onUpload(publicUrl);
-            setMode(null);
 
         } catch (error) {
             console.error('Upload error:', error);
@@ -126,7 +124,7 @@ const DocumentUpload = ({
     };
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-2" >
             <label className="text-sm font-medium text-foreground">{label}</label>
 
             {/* Preview Mode */}
@@ -165,66 +163,70 @@ const DocumentUpload = ({
             )}
 
             {/* Camera Mode */}
-            {cameraActive && (
-                <div className="relative rounded-lg overflow-hidden border border-border">
-                    <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        className="w-full h-48 object-cover bg-black"
-                    />
-                    <canvas ref={canvasRef} className="hidden" />
-                    <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-2">
-                        <Button
-                            type="button"
-                            onClick={capturePhoto}
-                            className="bg-white text-black hover:bg-gray-100"
-                        >
-                            <Camera size={16} className="mr-1" /> Capture
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={stopCamera}
-                        >
-                            Cancel
-                        </Button>
+            {
+                cameraActive && (
+                    <div className="relative rounded-lg overflow-hidden border border-border">
+                        <video
+                            ref={videoRef}
+                            autoPlay
+                            playsInline
+                            className="w-full h-48 object-cover bg-black"
+                        />
+                        <canvas ref={canvasRef} className="hidden" />
+                        <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-2">
+                            <Button
+                                type="button"
+                                onClick={capturePhoto}
+                                className="bg-white text-black hover:bg-gray-100"
+                            >
+                                <Camera size={16} className="mr-1" /> Capture
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={stopCamera}
+                            >
+                                Cancel
+                            </Button>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Initial State - Choose Mode */}
-            {!preview && !cameraActive && (
-                <div className="flex gap-2">
-                    <button
-                        type="button"
-                        onClick={startCamera}
-                        disabled={uploading}
-                        className="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors text-sm text-muted-foreground hover:text-primary"
-                    >
-                        <Camera size={18} />
-                        <span>Camera</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploading}
-                        className="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors text-sm text-muted-foreground hover:text-primary"
-                    >
-                        <Upload size={18} />
-                        <span>{uploading ? 'Uploading...' : 'Upload'}</span>
-                    </button>
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                    />
-                </div>
-            )}
-        </div>
+            {
+                !preview && !cameraActive && (
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={startCamera}
+                            disabled={uploading}
+                            className="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors text-sm text-muted-foreground hover:text-primary"
+                        >
+                            <Camera size={18} />
+                            <span>Camera</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            className="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors text-sm text-muted-foreground hover:text-primary"
+                        >
+                            <Upload size={18} />
+                            <span>{uploading ? 'Uploading...' : 'Upload'}</span>
+                        </button>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                        />
+                    </div>
+                )
+            }
+        </div >
     );
 };
 

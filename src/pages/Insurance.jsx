@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { useSettings } from '../context/SettingsContext';
+import { formatDate } from '../utils/date'; // Added import
 import { Shield, Search, Calendar, Car, Upload, FileText, AlertTriangle, CheckCircle, Clock, X } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -9,7 +9,7 @@ import Input from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
 
 const Insurance = () => {
-    const { formatCurrency } = useSettings();
+    // Removed unused formatCurrency
     const [cars, setCars] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');

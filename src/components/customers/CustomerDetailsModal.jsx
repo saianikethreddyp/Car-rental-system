@@ -17,7 +17,7 @@ const CustomerDetailsModal = ({ isOpen, onClose, customer, formatCurrency, onVie
         if (isOpen && customer?.phone) {
             fetchCustomerRentals();
         }
-    }, [isOpen, customer]);
+    }, [isOpen, customer]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const fetchCustomerRentals = async () => {
         try {
@@ -55,7 +55,7 @@ const CustomerDetailsModal = ({ isOpen, onClose, customer, formatCurrency, onVie
     // Calculate stats
     const totalSpent = rentals.reduce((sum, r) => sum + (Number(r.total_amount) || 0), 0);
     const activeRentals = rentals.filter(r => r.status === 'active').length;
-    const completedRentals = rentals.filter(r => r.status === 'completed').length;
+    // Removed unused completedRentals.length;
 
     return (
         <Modal

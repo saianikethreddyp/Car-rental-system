@@ -5,6 +5,46 @@ import Badge from '../ui/Badge';
 import { Phone, MapPin, Calendar, Clock, CreditCard, IdCard, Car, DollarSign, ExternalLink } from 'lucide-react';
 
 /**
+ * DocumentCard - Displays identity document with preview
+ */
+const DocumentCard = ({ title, number, imageUrl, icon: IconComponent }) => (
+    <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+        <div className="flex items-center gap-2">
+            <IconComponent size={16} className="text-primary" />
+            <span className="font-medium text-foreground">{title}</span>
+        </div>
+        {number ? (
+            <p className="text-sm text-muted-foreground font-mono">{number}</p>
+        ) : (
+            <p className="text-sm text-muted-foreground italic">Not provided</p>
+        )}
+        {imageUrl ? (
+            <a
+                href={imageUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block relative group"
+            >
+                <img
+                    src={imageUrl}
+                    alt={title}
+                    className="w-full h-32 object-cover rounded-md border border-border"
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                    <span className="text-white text-sm flex items-center gap-1">
+                        <ExternalLink size={14} /> View Full
+                    </span>
+                </div>
+            </a>
+        ) : (
+            <div className="w-full h-32 bg-muted rounded-md border border-dashed border-border flex items-center justify-center">
+                <span className="text-xs text-muted-foreground">No photo uploaded</span>
+            </div>
+        )}
+    </div>
+);
+
+/**
  * RentalDetailsModal - Shows full rental details including customer documents
  */
 const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
@@ -25,42 +65,7 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
         }
     };
 
-    const DocumentCard = ({ title, number, imageUrl, icon: Icon }) => (
-        <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-            <div className="flex items-center gap-2">
-                <Icon size={16} className="text-primary" />
-                <span className="font-medium text-foreground">{title}</span>
-            </div>
-            {number ? (
-                <p className="text-sm text-muted-foreground font-mono">{number}</p>
-            ) : (
-                <p className="text-sm text-muted-foreground italic">Not provided</p>
-            )}
-            {imageUrl ? (
-                <a
-                    href={imageUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block relative group"
-                >
-                    <img
-                        src={imageUrl}
-                        alt={title}
-                        className="w-full h-32 object-cover rounded-md border border-border"
-                    />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
-                        <span className="text-white text-sm flex items-center gap-1">
-                            <ExternalLink size={14} /> View Full
-                        </span>
-                    </div>
-                </a>
-            ) : (
-                <div className="w-full h-32 bg-muted rounded-md border border-dashed border-border flex items-center justify-center">
-                    <span className="text-xs text-muted-foreground">No photo uploaded</span>
-                </div>
-            )}
-        </div>
-    );
+
 
     return (
         <Modal

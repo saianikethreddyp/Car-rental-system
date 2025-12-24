@@ -163,7 +163,7 @@ describe('Rentals Page', () => {
         if (endDateInput) fireEvent.change(endDateInput, { target: { value: '2023-11-02' } });
 
         await user.type(screen.getByPlaceholderText('e.g. John Doe'), 'New Customer');
-        await user.type(screen.getByPlaceholderText('+91...'), '9999999999');
+        await user.type(screen.getByPlaceholderText('e.g. 9876543210'), '9999999999');
 
         await user.click(screen.getByRole('button', { name: /Confirm Booking/i }));
 

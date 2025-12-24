@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { dashboardApi } from '../../api/client';
+// Removed: import { supabase } from '../../supabaseClient';
 import { useSettings } from '../../context/SettingsContext';
 import {
     Calendar,
@@ -26,32 +27,14 @@ export const FleetCalendar = ({ selectedDate }) => {
 
     useEffect(() => {
         fetchData();
-    }, [selectedDate]);
+    }, [selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const fetchData = async () => {
         try {
             setLoading(true);
-
-            // Fetch all cars
-            const { data: carsData } = await supabase
-                .from('cars')
-                .select('id, make, model, license_plate, status')
-                .order('make');
-
-            // Fetch active rentals for next 7 days
-            const startDate = new Date(selectedDate);
-            const endDate = new Date(selectedDate);
-            endDate.setDate(endDate.getDate() + 6);
-
-            const { data: rentalsData } = await supabase
-                .from('rentals')
-                .select('car_id, start_date, end_date, status')
-                .in('status', ['active', 'pending'])
-                .gte('end_date', startDate.toISOString().split('T')[0])
-                .lte('start_date', endDate.toISOString().split('T')[0]);
-
-            setCars(carsData || []);
-            setRentals(rentalsData || []);
+            const { cars, rentals } = await dashboardApi.getFleet(selectedDate);
+            setCars(cars || []);
+            setRentals(rentals || []);
         } catch (error) {
             console.error('Error fetching fleet data:', error);
         } finally {
@@ -176,36 +159,18 @@ export const FleetCalendar = ({ selectedDate }) => {
 // 2. UPCOMING RETURNS
 // ============================================
 export const UpcomingReturns = ({ selectedDate }) => {
-    const { formatCurrency } = useSettings();
+
     const [returns, setReturns] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchReturns();
-    }, [selectedDate]);
+    }, [selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const fetchReturns = async () => {
         try {
             setLoading(true);
-            const today = new Date(selectedDate);
-            const tomorrow = new Date(selectedDate);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-
-            const { data } = await supabase
-                .from('rentals')
-                .select(`
-                    id,
-                    customer_name,
-                    customer_phone,
-                    end_date,
-                    total_amount,
-                    cars (make, model, license_plate)
-                `)
-                .eq('status', 'active')
-                .gte('end_date', today.toISOString().split('T')[0])
-                .lte('end_date', tomorrow.toISOString().split('T')[0])
-                .order('end_date');
-
+            const data = await dashboardApi.getReturns(selectedDate);
             setReturns(data || []);
         } catch (error) {
             console.error('Error fetching returns:', error);
@@ -296,60 +261,16 @@ export const MaintenanceAlerts = () => {
 
     useEffect(() => {
         fetchAlerts();
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const fetchAlerts = async () => {
         try {
             setLoading(true);
+            const { maintenanceCars, insuranceAlerts, documentAlerts } = await dashboardApi.getAlerts();
 
-            // Fetch maintenance cars
-            const { data: maintenanceData } = await supabase
-                .from('cars')
-                .select('id, make, model, license_plate, status, updated_at')
-                .eq('status', 'maintenance')
-                .order('updated_at', { ascending: true });
-
-            setMaintenanceCars(maintenanceData || []);
-
-            // Fetch cars with expiring/expired insurance
-            const today = new Date();
-            const thirtyDaysFromNow = new Date();
-            thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-            const thirtyDaysStr = thirtyDaysFromNow.toISOString().split('T')[0];
-
-            const { data: insuranceData } = await supabase
-                .from('cars')
-                .select('id, make, model, license_plate, insurance_expiry_date')
-                .not('insurance_expiry_date', 'is', null)
-                .lte('insurance_expiry_date', thirtyDaysStr)
-                .order('insurance_expiry_date', { ascending: true });
-
-            setInsuranceAlerts(insuranceData || []);
-
-            // Fetch cars with expiring documents (RC, Pollution, Fitness)
-            const { data: allCars } = await supabase
-                .from('cars')
-                .select('id, make, model, license_plate, rc_expiry_date, pollution_expiry_date, fitness_expiry_date');
-
-            const docAlerts = [];
-            (allCars || []).forEach(car => {
-                // Check RC expiry
-                if (car.rc_expiry_date && new Date(car.rc_expiry_date) <= thirtyDaysFromNow) {
-                    docAlerts.push({ ...car, docType: 'RC', expiryDate: car.rc_expiry_date });
-                }
-                // Check Pollution expiry
-                if (car.pollution_expiry_date && new Date(car.pollution_expiry_date) <= thirtyDaysFromNow) {
-                    docAlerts.push({ ...car, docType: 'Pollution', expiryDate: car.pollution_expiry_date });
-                }
-                // Check Fitness expiry
-                if (car.fitness_expiry_date && new Date(car.fitness_expiry_date) <= thirtyDaysFromNow) {
-                    docAlerts.push({ ...car, docType: 'Fitness', expiryDate: car.fitness_expiry_date });
-                }
-            });
-
-            // Sort by expiry date
-            docAlerts.sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
-            setDocumentAlerts(docAlerts);
+            setMaintenanceCars(maintenanceCars || []);
+            setInsuranceAlerts(insuranceAlerts || []);
+            setDocumentAlerts(documentAlerts || []);
         } catch (error) {
             console.error('Error fetching alerts:', error);
         } finally {
@@ -532,45 +453,12 @@ export const TodaysSchedule = ({ selectedDate }) => {
 
     useEffect(() => {
         fetchSchedule();
-    }, [selectedDate]);
+    }, [selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const fetchSchedule = async () => {
         try {
             setLoading(true);
-            const dateStr = new Date(selectedDate).toISOString().split('T')[0];
-
-            // Fetch pickups (rentals starting today)
-            const { data: pickups } = await supabase
-                .from('rentals')
-                .select(`
-                    id,
-                    customer_name,
-                    customer_phone,
-                    start_date,
-                    start_time,
-                    from_location,
-                    cars (make, model, license_plate)
-                `)
-                .eq('start_date', dateStr)
-                .in('status', ['active', 'pending'])
-                .order('start_time');
-
-            // Fetch drop-offs (rentals ending today)
-            const { data: dropoffs } = await supabase
-                .from('rentals')
-                .select(`
-                    id,
-                    customer_name,
-                    customer_phone,
-                    end_date,
-                    end_time,
-                    to_location,
-                    cars (make, model, license_plate)
-                `)
-                .eq('end_date', dateStr)
-                .eq('status', 'active')
-                .order('end_time');
-
+            const { pickups, dropoffs } = await dashboardApi.getSchedule(selectedDate);
             setSchedule({
                 pickups: pickups || [],
                 dropoffs: dropoffs || []

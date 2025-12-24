@@ -7,6 +7,7 @@ import { Car, CalendarDays, DollarSign, Activity, TrendingUp, Users, Plus } from
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
+import { dashboardApi } from '../api/client';
 import { FleetCalendar, UpcomingReturns, MaintenanceAlerts, TodaysSchedule } from '../components/dashboard/OperationalWidgets';
 
 const Dashboard = () => {
@@ -52,138 +53,18 @@ const Dashboard = () => {
         try {
             setLoading(true);
 
-            const targetStart = new Date(dateStr);
-            targetStart.setHours(0, 0, 0, 0);
+            // Fetch Stats and Activity in parallel
+            const [statsData, activityData] = await Promise.all([
+                dashboardApi.getStats(dateStr),
+                dashboardApi.getActivity()
+            ]);
 
-            const targetEnd = new Date(dateStr);
-            targetEnd.setHours(23, 59, 59, 999);
-
-            // 1. Total Cars
-            const { count: carsCount, error: carsError } = await supabase
-                .from('cars')
-                .select('*', { count: 'exact', head: true });
-
-            if (carsError) throw carsError;
-
-            // 1b. Total Customers
-            const { count: customersCount, error: customersError } = await supabase
-                .from('customers')
-                .select('*', { count: 'exact', head: true });
-
-            if (customersError) throw customersError;
-
-            // 1c. Available Cars
-            const { count: availableCarsCount } = await supabase
-                .from('cars')
-                .select('*', { count: 'exact', head: true })
-                .eq('status', 'available');
-
-            // 2. Fetch Rentals for Stats (limited to last 500 for performance)
-            const { data: allRentals, error: rentalsError } = await supabase
-                .from('rentals')
-                .select(`
-                    id,
-                    total_amount,
-                    start_date,
-                    end_date,
-                    status,
-                    customer_name,
-                    created_at,
-                    cars ( daily_rate, make, model )
-                `)
-                .neq('status', 'cancelled')
-                .order('created_at', { ascending: false })
-                .limit(500);
-
-            if (rentalsError) throw rentalsError;
-
-            // 3. Status Calculation & Chart Data Aggregation
-            let activeCount = 0;
-            let dayRevenue = 0;
-
-            // Last 7 days chart data
-            const last7Days = [...Array(7)].map((_, i) => {
-                const d = new Date();
-                d.setDate(d.getDate() - (6 - i));
-                return {
-                    date: d.toISOString().split('T')[0],
-                    day: d.toLocaleDateString('en-US', { weekday: 'short' }),
-                    amount: 0
-                };
-            });
-
-            allRentals.forEach(rental => {
-                const rentalStart = new Date(rental.start_date);
-                const rentalEnd = new Date(rental.end_date);
-
-                // Active Count Logic - count by status='active'
-                if (rental.status === 'active') {
-                    activeCount++;
-                    const rate = Number(rental.cars?.daily_rate) || 0;
-                    dayRevenue += rate; // Approximate daily revenue
-                }
-
-                // Chart Data Logic (Revenue by Start Date)
-                const rentalDateStr = rental.start_date; // Assuming revenue booked on start date
-                const dayStat = last7Days.find(d => d.date === rentalDateStr);
-                if (dayStat) {
-                    dayStat.amount += Number(rental.total_amount) || 0;
-                }
-            });
-
-            // Normalize chart heights for visualization
-            const maxAmount = Math.max(...last7Days.map(d => d.amount), 1); // Avoid division by zero
-            const finalizedChartData = last7Days.map(d => ({
-                ...d,
-                height: (d.amount / maxAmount) * 100
-            }));
-
-            // 4. Recent Activity
-            const { data: recent, error: recentError } = await supabase
-                .from('rentals')
-                .select(`
-                    *,
-                    cars (make, model, license_plate)
-                `)
-                .order('created_at', { ascending: false })
-                .limit(5);
-
-            if (recentError) throw recentError;
-
-            // Calculate monthly revenue
-            const now = new Date();
-            const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-            const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-
-            let monthlyRevenue = 0;
-            let lastMonthRevenue = 0;
-
-            allRentals.forEach(rental => {
-                const rentalDate = new Date(rental.start_date);
-                const amount = Number(rental.total_amount) || 0;
-
-                if (rentalDate >= thisMonthStart) {
-                    monthlyRevenue += amount;
-                } else if (rentalDate >= lastMonthStart && rentalDate <= lastMonthEnd) {
-                    lastMonthRevenue += amount;
-                }
-            });
-
-            setStats({
-                totalCars: carsCount || 0,
-                availableCars: availableCarsCount || 0,
-                activeRentals: activeCount,
-                dailyRevenue: dayRevenue,
-                totalCustomers: customersCount || 0,
-                monthlyRevenue,
-                lastMonthRevenue
-            });
-            setRecentRentals(recent || []);
-            setChartData(finalizedChartData);
+            setStats(statsData.stats);
+            setChartData(statsData.chartData);
+            setRecentRentals(activityData);
 
         } catch (error) {
-            console.error('Error fetching dashboard data:', error.message);
+            console.error('Error fetching dashboard data:', error);
         } finally {
             setLoading(false);
         }
