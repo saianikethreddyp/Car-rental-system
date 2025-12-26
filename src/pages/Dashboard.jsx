@@ -125,7 +125,13 @@ const Dashboard = () => {
                     title="Active Rentals"
                     value={stats.activeRentals}
                     icon={CalendarDays}
-                    subtext={new Date(selectedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    subtext={(() => {
+                        const d = new Date(selectedDate);
+                        const day = String(d.getDate()).padStart(2, '0');
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const year = d.getFullYear();
+                        return `${day}/${month}/${year}`;
+                    })()}
                 />
                 <StatsCard
                     title="Monthly Revenue"
