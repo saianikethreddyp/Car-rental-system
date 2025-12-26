@@ -243,10 +243,10 @@ const Rentals = () => {
                             <button
                                 key={status}
                                 onClick={() => setFilterStatus(status)}
-                                className={`px - 4 py - 2 rounded - full text - sm font - medium transition - all capitalize whitespace - nowrap ${filterStatus === status
+                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all capitalize whitespace-nowrap ${filterStatus === status
                                     ? 'bg-primary text-primary-foreground shadow-sm'
                                     : 'bg-background border border-input text-muted-foreground hover:bg-muted'
-                                    } `}
+                                    }`}
                             >
                                 {status}
                             </button>
