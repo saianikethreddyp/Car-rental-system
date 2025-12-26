@@ -43,57 +43,55 @@ const Customers = () => {
         try {
             setLoading(true);
 
-            // Fetch customers from dedicated table
-            const { data: customersData, error: customersError } = await supabase
-                .from('customers')
+            // Fetch all rentals and aggregate customers from them
+            const { data: rentals, error: rentalsError } = await supabase
+                .from('rentals')
                 .select('*')
                 .order('created_at', { ascending: false });
 
-            if (customersError) throw customersError;
-
-            // Fetch rental stats for each customer
-            const { data: rentals, error: rentalsError } = await supabase
-                .from('rentals')
-                .select('customer_id, total_amount, created_at, status');
-
             if (rentalsError) throw rentalsError;
 
-            // Aggregate rental data per customer
-            const rentalStats = {};
-            rentals.forEach(rental => {
-                if (!rental.customer_id) return;
+            // Aggregate unique customers from rentals by phone number
+            const customerMap = {};
 
-                if (!rentalStats[rental.customer_id]) {
-                    rentalStats[rental.customer_id] = {
+            rentals.forEach(rental => {
+                const phone = rental.customer_phone;
+                if (!phone) return;
+
+                if (!customerMap[phone]) {
+                    customerMap[phone] = {
+                        id: phone, // Use phone as unique ID
+                        name: rental.customer_name,
+                        phone: rental.customer_phone,
                         totalRentals: 0,
                         totalSpent: 0,
                         lastRentalDate: rental.created_at,
-                        hasActiveRental: false
+                        hasActiveRental: false,
+                        rentals: []
                     };
                 }
 
-                rentalStats[rental.customer_id].totalRentals += 1;
-                rentalStats[rental.customer_id].totalSpent += rental.total_amount || 0;
+                customerMap[phone].totalRentals += 1;
+                customerMap[phone].totalSpent += rental.total_amount || 0;
+                customerMap[phone].rentals.push(rental);
 
-                if (new Date(rental.created_at) > new Date(rentalStats[rental.customer_id].lastRentalDate)) {
-                    rentalStats[rental.customer_id].lastRentalDate = rental.created_at;
+                // Update name if newer rental has different name
+                if (new Date(rental.created_at) > new Date(customerMap[phone].lastRentalDate)) {
+                    customerMap[phone].lastRentalDate = rental.created_at;
+                    customerMap[phone].name = rental.customer_name;
                 }
 
                 if (rental.status === 'active') {
-                    rentalStats[rental.customer_id].hasActiveRental = true;
+                    customerMap[phone].hasActiveRental = true;
                 }
             });
 
-            // Merge customer data with stats
-            const enrichedCustomers = customersData.map(customer => ({
-                ...customer,
-                totalRentals: rentalStats[customer.id]?.totalRentals || 0,
-                totalSpent: rentalStats[customer.id]?.totalSpent || 0,
-                lastRentalDate: rentalStats[customer.id]?.lastRentalDate || customer.created_at,
-                hasActiveRental: rentalStats[customer.id]?.hasActiveRental || false
-            }));
+            // Convert map to array and sort by last rental date
+            const customersList = Object.values(customerMap).sort((a, b) =>
+                new Date(b.lastRentalDate) - new Date(a.lastRentalDate)
+            );
 
-            setCustomers(enrichedCustomers);
+            setCustomers(customersList);
 
         } catch (error) {
             console.error('Error fetching customers:', error.message);
