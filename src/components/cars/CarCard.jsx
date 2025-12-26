@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit2, Trash2, Car, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
+import { Edit2, Trash2, Car, CheckCircle, AlertTriangle, Clock, UserCircle } from 'lucide-react';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
@@ -87,6 +87,12 @@ const CarCard = ({ car, onEdit, onDelete, onStatusUpdate }) => {
                         <p className="text-xs text-muted-foreground font-medium mt-0.5">
                             {car.license_plate} • {car.year}
                         </p>
+                        {car.ownership_type === 'external' && car.external_owner_name && (
+                            <p className="text-xs text-amber-600 font-medium mt-1 flex items-center gap-1">
+                                <UserCircle size={12} />
+                                {car.external_owner_name}
+                            </p>
+                        )}
                     </div>
                     <div className="text-right">
                         <p className="text-lg font-bold text-foreground">

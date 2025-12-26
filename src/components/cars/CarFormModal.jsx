@@ -5,7 +5,7 @@ import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import Select from '../ui/Select';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, Building2, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
@@ -16,6 +16,8 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         license_plate: '',
         status: 'available',
         daily_rate: '',
+        ownership_type: 'self',
+        external_owner_name: '',
     }), []);
 
     // Use key-based reset pattern: when resetKey changes, form resets
@@ -280,6 +282,53 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                         onChange={handleChange}
                         options={statusOptions}
                     />
+                </div>
+
+                {/* Ownership Section */}
+                <div className="space-y-3">
+                    <label className="text-sm font-medium text-foreground">Car Ownership</label>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, ownership_type: 'self', external_owner_name: '' }))}
+                            className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${formData.ownership_type === 'self'
+                                    ? 'border-primary bg-primary/5 text-primary'
+                                    : 'border-border hover:border-muted-foreground/50 text-muted-foreground'
+                                }`}
+                        >
+                            <Building2 size={20} />
+                            <div className="text-left">
+                                <p className="font-medium text-sm">Organization</p>
+                                <p className="text-xs opacity-70">Self-owned vehicle</p>
+                            </div>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, ownership_type: 'external' }))}
+                            className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${formData.ownership_type === 'external'
+                                    ? 'border-primary bg-primary/5 text-primary'
+                                    : 'border-border hover:border-muted-foreground/50 text-muted-foreground'
+                                }`}
+                        >
+                            <User size={20} />
+                            <div className="text-left">
+                                <p className="font-medium text-sm">External Owner</p>
+                                <p className="text-xs opacity-70">Third-party vehicle</p>
+                            </div>
+                        </button>
+                    </div>
+
+                    {/* External Owner Name - shown only when external is selected */}
+                    {formData.ownership_type === 'external' && (
+                        <Input
+                            label="Owner Name"
+                            name="external_owner_name"
+                            value={formData.external_owner_name}
+                            onChange={handleChange}
+                            placeholder="e.g., Shekhar Sharma"
+                            required
+                        />
+                    )}
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-border">
