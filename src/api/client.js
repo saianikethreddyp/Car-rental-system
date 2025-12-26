@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { supabase } from '../supabaseClient';
 
 // Create axios instance
 const api = axios.create({
@@ -8,10 +9,59 @@ const api = axios.create({
     }
 });
 
+// Request interceptor - Add auth token to all requests
+api.interceptors.request.use(
+    async (config) => {
+        try {
+            // Get the current session from Supabase
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (session?.access_token) {
+                config.headers.Authorization = `Bearer ${session.access_token}`;
+            }
+        } catch (error) {
+            console.error('Error getting auth token:', error);
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
 // Response interceptor for error handling
 api.interceptors.response.use(
     (response) => response.data,
     (error) => {
+        // Handle 401 Unauthorized - redirect to login
+        if (error.response?.status === 401) {
+            console.error('Unauthorized - redirecting to login');
+            // Clear any stale auth state
+            supabase.auth.signOut();
+            window.location.href = '/login';
+            return Promise.reject(new Error('Session expired. Please login again.'));
+        }
+
+        // Handle 403 Forbidden
+        if (error.response?.status === 403) {
+            console.error('Forbidden:', error.response?.data?.message);
+            return Promise.reject(new Error(error.response?.data?.message || 'Access denied'));
+        }
+
+        // Handle validation errors (400)
+        if (error.response?.status === 400 && error.response?.data?.details) {
+            const validationErrors = error.response.data.details
+                .map(e => e.message)
+                .join(', ');
+            return Promise.reject(new Error(validationErrors));
+        }
+
+        // Handle rate limiting (429)
+        if (error.response?.status === 429) {
+            console.error('Rate limited:', error.response?.data?.message);
+            return Promise.reject(new Error('Too many requests. Please slow down.'));
+        }
+
         console.error('API Error:', error.response?.data || error.message);
         return Promise.reject(error);
     }
