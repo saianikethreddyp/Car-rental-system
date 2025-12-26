@@ -2,7 +2,7 @@ import React from 'react';
 import { formatDate } from '../../utils/date';
 import Modal from '../ui/Modal';
 import Badge from '../ui/Badge';
-import { Phone, MapPin, Calendar, Clock, CreditCard, IdCard, Car, DollarSign, ExternalLink } from 'lucide-react';
+import { Phone, MapPin, Calendar, Clock, CreditCard, IdCard, Car, ExternalLink } from 'lucide-react';
 
 /**
  * DocumentCard - Displays identity document with preview
@@ -102,8 +102,7 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
                     </div>
                     <div className="space-y-1">
                         <span className="text-xs text-muted-foreground uppercase tracking-wider">Amount</span>
-                        <p className="font-bold text-lg text-emerald-600 flex items-center gap-1">
-                            <DollarSign size={16} />
+                        <p className="font-bold text-lg text-emerald-600">
                             {formatCurrency(rental.total_amount)}
                         </p>
                     </div>
