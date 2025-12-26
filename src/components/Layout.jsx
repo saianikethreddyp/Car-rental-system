@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import SupportButton from './ui/SupportButton';
 
 const Layout = () => {
     return (
@@ -18,8 +19,12 @@ const Layout = () => {
                     </div>
                 </main>
             </div>
+
+            {/* WhatsApp Support Button */}
+            <SupportButton />
         </div>
     );
 };
 
 export default Layout;
+
