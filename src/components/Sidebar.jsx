@@ -63,9 +63,11 @@ const Sidebar = () => {
                 <div className="bg-secondary/50 rounded-lg p-4 mb-4">
                     <p className="text-sm font-medium text-foreground">Need Help?</p>
                     <p className="text-xs text-muted-foreground mt-1 mb-3">Check our docs</p>
-                    <Button variant="outline" size="sm" className="w-full h-8 text-xs bg-background">
-                        Documentation
-                    </Button>
+                    <NavLink to="/help">
+                        <Button variant="outline" size="sm" className="w-full h-8 text-xs bg-background">
+                            Documentation
+                        </Button>
+                    </NavLink>
                 </div>
 
                 <Button

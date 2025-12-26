@@ -18,6 +18,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const Insurance = lazy(() => import('./pages/Insurance'));
 const Payments = lazy(() => import('./pages/Payments'));
+const Help = lazy(() => import('./pages/Help'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -49,6 +50,7 @@ function App() {
                       <Route path="insurance" element={<Insurance />} />
                       <Route path="payments" element={<Payments />} />
                       <Route path="settings" element={<Settings />} />
+                      <Route path="help" element={<Help />} />
                     </Route>
                   </Route>
 
