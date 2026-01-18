@@ -9,7 +9,17 @@ import Button from '../components/ui/Button';
 import CustomerDetailsModal from '../components/customers/CustomerDetailsModal';
 
 const Customers = () => {
-    const { formatCurrency } = useSettings();
+    const settingsContext = useSettings();
+    // Default formatter if context is missing
+    const defaultFormatter = (amount) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 0
+        }).format(Number(amount) || 0);
+    };
+
+    const formatCurrency = settingsContext?.formatCurrency || defaultFormatter;
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');

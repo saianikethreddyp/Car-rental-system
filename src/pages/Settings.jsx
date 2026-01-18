@@ -16,7 +16,9 @@ import Badge from '../components/ui/Badge';
 
 const Settings = () => {
     const { user } = useAuth();
-    const { settings, updateSettings } = useSettings();
+    const settingsContext = useSettings();
+    const settings = settingsContext?.settings || {};
+    const updateSettings = settingsContext?.updateSettings || (() => console.warn('Settings context missing'));
     const [loading, setLoading] = useState(false);
     const [passwordLoading, setPasswordLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('general');

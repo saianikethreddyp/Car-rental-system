@@ -14,7 +14,17 @@ import Input from '../components/ui/Input';
 import toast from 'react-hot-toast';
 
 const Payments = () => {
-    const { formatCurrency } = useSettings();
+    const settingsContext = useSettings();
+    // Default formatter if context is missing
+    const defaultFormatter = (amount) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 0
+        }).format(Number(amount) || 0);
+    };
+
+    const formatCurrency = settingsContext?.formatCurrency || defaultFormatter;
     const [rentals, setRentals] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');

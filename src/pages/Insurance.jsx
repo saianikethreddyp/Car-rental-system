@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import { carsApi } from '../api/client';
 import { formatDate } from '../utils/date'; // Added import
 import { Shield, Search, Calendar, Car, Upload, FileText, AlertTriangle, CheckCircle, Clock, X } from 'lucide-react';
 import Card from '../components/ui/Card';
@@ -31,15 +32,11 @@ const Insurance = () => {
     const fetchCars = async () => {
         try {
             setLoading(true);
-            const { data, error } = await supabase
-                .from('cars')
-                .select('*')
-                .order('insurance_expiry_date', { ascending: true, nullsFirst: true });
-
-            if (error) throw error;
+            const data = await carsApi.getAll(); // API returns array directly
             setCars(data || []);
         } catch (error) {
             console.error('Error fetching cars:', error);
+            // alert('Failed to fetch cars. Please try refreshing.'); // Optional
         } finally {
             setLoading(false);
         }
@@ -81,12 +78,8 @@ const Insurance = () => {
 
         setSubmitting(true);
         try {
-            const { error } = await supabase
-                .from('cars')
-                .update(formData)
-                .eq('id', selectedCar.id);
-
-            if (error) throw error;
+            const carId = selectedCar.id || selectedCar._id;
+            await carsApi.update(carId, formData);
 
             setIsModalOpen(false);
             fetchCars();
@@ -103,7 +96,8 @@ const Insurance = () => {
         if (!file) return;
 
         try {
-            const fileName = `insurance_${selectedCar.id}_${Date.now()}.${file.name.split('.').pop()}`;
+            const carId = selectedCar.id || selectedCar._id;
+            const fileName = `insurance_${carId}_${Date.now()}.${file.name.split('.').pop()}`;
             const filePath = `insurance/${fileName}`;
 
             const { error: uploadError } = await supabase.storage

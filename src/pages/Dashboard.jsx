@@ -12,7 +12,19 @@ import { FleetCalendar, UpcomingReturns, MaintenanceAlerts, TodaysSchedule } fro
 
 const Dashboard = () => {
     const navigate = useNavigate();
-    const { formatCurrency } = useSettings();
+    const settingsContext = useSettings();
+
+    // Default formatter if context is missing
+    const defaultFormatter = (amount) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 0
+        }).format(Number(amount) || 0);
+    };
+
+    const formatCurrency = settingsContext?.formatCurrency || defaultFormatter;
+
     // Default to today in YYYY-MM-DD format
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [stats, setStats] = useState({
