@@ -15,7 +15,19 @@ import DocumentUpload from '../components/ui/DocumentUpload';
 import RentalDetailsModal from '../components/rentals/RentalDetailsModal';
 
 const Rentals = () => {
-    const { formatCurrency } = useSettings();
+    // Safely access settings or provide defaults to prevent crashes
+    const settingsContext = useSettings();
+
+    // Default formatter if context is missing or still initializing
+    const defaultFormatter = (amount) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 0
+        }).format(Number(amount) || 0);
+    };
+
+    const formatCurrency = settingsContext?.formatCurrency || defaultFormatter;
     const [rentals, setRentals] = useState([]);
     const [cars, setCars] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -97,7 +109,7 @@ const Rentals = () => {
                 const end = name === 'end_date' ? value : prev.end_date;
 
                 if (carId && start && end) {
-                    const selectedCar = cars.find(c => c.id.toString() === carId.toString());
+                    const selectedCar = cars.find(c => String(c.id || c._id) === String(carId));
                     if (selectedCar) {
                         const startDate = new Date(start);
                         const endDate = new Date(end);
@@ -396,7 +408,7 @@ const Rentals = () => {
                         options={[
                             { value: '', label: 'Select a car...', disabled: true },
                             ...cars.map(car => ({
-                                value: car.id,
+                                value: car.id || car._id,
                                 label: `${car.make} ${car.model} (${car.license_plate}) - ${formatCurrency(car.daily_rate)}/day ${car.status !== 'available' ? `(${car.status})` : ''}`,
                                 disabled: car.status !== 'available'
                             }))

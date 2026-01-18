@@ -115,21 +115,29 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
             return 'Invalid format. Use letters and numbers only (e.g., TS08FA2898)';
         }
 
-        // Check uniqueness in database (active cars only)
-        const { data, error } = await supabase
-            .from('cars')
-            .select('id, is_deleted')
-            .eq('license_plate', plate)
-            .maybeSingle();
+        try {
+            // Check uniqueness via Backend API
+            const { available, isDeleted, car } = await carsApi.checkAvailability(plate);
 
-        if (error) {
+            if (!available) {
+                // If editing, allow the same plate for this car
+                if (initialData && initialData.license_plate === plate) {
+                    return null;
+                }
+
+                if (isDeleted) {
+                    // Logic to show deleted car alert is handled in onBlur,
+                    // but we validation should block standard submission until they explicitly restore.
+                    return 'This license plate belongs to a deleted vehicle. Please restore it.';
+                }
+
+                return 'This license plate is already registered to another vehicle';
+            }
+        } catch (error) {
             console.error('Error checking license plate:', error);
-            return 'Error validating license plate';
-        }
-
-        // If editing, allow the same plate for this car
-        if (data && initialData?.id !== data.id && !data.is_deleted) {
-            return 'This license plate is already registered to another vehicle';
+            // Allow submit if check fails? Or block?
+            // Safer to block or just warn. Let's return generic error for now.
+            return 'Error validating license plate. SERVER ERROR';
         }
 
         return null; // No error
@@ -292,8 +300,8 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                             type="button"
                             onClick={() => setFormData(prev => ({ ...prev, ownership_type: 'self', external_owner_name: '' }))}
                             className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${formData.ownership_type === 'self'
-                                    ? 'border-primary bg-primary/5 text-primary'
-                                    : 'border-border hover:border-muted-foreground/50 text-muted-foreground'
+                                ? 'border-primary bg-primary/5 text-primary'
+                                : 'border-border hover:border-muted-foreground/50 text-muted-foreground'
                                 }`}
                         >
                             <Building2 size={20} />
@@ -306,8 +314,8 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                             type="button"
                             onClick={() => setFormData(prev => ({ ...prev, ownership_type: 'external' }))}
                             className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${formData.ownership_type === 'external'
-                                    ? 'border-primary bg-primary/5 text-primary'
-                                    : 'border-border hover:border-muted-foreground/50 text-muted-foreground'
+                                ? 'border-primary bg-primary/5 text-primary'
+                                : 'border-border hover:border-muted-foreground/50 text-muted-foreground'
                                 }`}
                         >
                             <User size={20} />

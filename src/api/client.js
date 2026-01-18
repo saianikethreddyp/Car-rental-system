@@ -91,7 +91,9 @@ export const carsApi = {
     update: (id, data) => api.put(`/cars/${id}`, data),
     delete: (id) => api.delete(`/cars/${id}`),
     checkDeletedByPlate: (licensePlate) => api.get(`/cars/check-deleted/${encodeURIComponent(licensePlate)}`),
+    checkAvailability: (licensePlate) => api.get(`/cars/check-availability/${encodeURIComponent(licensePlate)}`),
     restore: (id) => api.post(`/cars/${id}/restore`),
+
 };
 
 export default api;
