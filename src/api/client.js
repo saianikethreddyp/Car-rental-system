@@ -82,6 +82,7 @@ export const rentalsApi = {
     create: (data) => api.post('/rentals', data),
     update: (id, data) => api.put(`/rentals/${id}`, data),
     delete: (id) => api.delete(`/rentals/${id}`),
+    addCharge: (id, chargeData) => api.post(`/rentals/${id}/charges`, chargeData),
 };
 
 export const carsApi = {

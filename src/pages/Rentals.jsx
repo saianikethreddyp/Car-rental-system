@@ -11,8 +11,11 @@ import Badge from '../components/ui/Badge';
 import Card from '../components/ui/Card';
 import Select from '../components/ui/Select';
 import InvoiceModal from '../components/invoices/InvoiceModal';
-import DocumentUpload from '../components/ui/DocumentUpload';
+import DocumentUploadDual from '../components/ui/DocumentUploadDual';
+import CarPhotoUpload from '../components/ui/CarPhotoUpload';
 import RentalDetailsModal from '../components/rentals/RentalDetailsModal';
+import AddChargeModal from '../components/rentals/AddChargeModal';
+import { FileCheck, DollarSign } from 'lucide-react';
 
 const Rentals = () => {
     // Safely access settings or provide defaults to prevent crashes
@@ -41,10 +44,15 @@ const Rentals = () => {
     const [showDocuments, setShowDocuments] = useState(false);
     const [detailsModalOpen, setDetailsModalOpen] = useState(false);
     const [selectedRentalForDetails, setSelectedRentalForDetails] = useState(null);
+    const [chargeModalOpen, setChargeModalOpen] = useState(false);
+    const [selectedRentalForCharge, setSelectedRentalForCharge] = useState(null);
+    const [addingCharge, setAddingCharge] = useState(false);
     const [formData, setFormData] = useState({
         car_id: '',
         customer_name: '',
         customer_phone: '',
+        secondary_phone: '',
+        parent_phone: '',
         from_location: '',
         to_location: '',
         start_date: '',
@@ -52,15 +60,23 @@ const Rentals = () => {
         end_date: '',
         end_time: '',
         total_amount: '',
-        // Identity documents
-        pan_number: '',
-        pan_image_url: '',
+        payment_method: 'cash',
+        // Identity documents - Front/Back
         aadhar_number: '',
-        aadhar_image_url: '',
+        aadhar_front_image_url: '',
+        aadhar_back_image_url: '',
+        pan_number: '',
+        pan_front_image_url: '',
+        pan_back_image_url: '',
         license_number: '',
-        license_image_url: ''
+        license_front_image_url: '',
+        license_back_image_url: '',
+        rc_number: '',
+        rc_front_image_url: '',
+        rc_back_image_url: '',
+        // Car photos
+        car_photos: []
     });
-    const [amountManuallyEdited, setAmountManuallyEdited] = useState(false);
 
     useEffect(() => {
         fetchRentals();
@@ -92,40 +108,21 @@ const Rentals = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        // Track if user manually edits the total amount
-        if (name === 'total_amount') {
-            setAmountManuallyEdited(true);
-            setFormData(prev => ({ ...prev, [name]: value }));
-            return;
-        }
-
         setFormData(prev => {
             const newData = { ...prev, [name]: value };
 
-            // Auto-calculate total amount if dates and car are selected (only if not manually edited)
-            if ((name === 'car_id' || name === 'start_date' || name === 'end_date') && !amountManuallyEdited) {
-                const carId = name === 'car_id' ? value : prev.car_id;
+            // Validate dates
+            if (name === 'start_date' || name === 'end_date') {
                 const start = name === 'start_date' ? value : prev.start_date;
                 const end = name === 'end_date' ? value : prev.end_date;
 
-                if (carId && start && end) {
-                    const selectedCar = cars.find(c => String(c.id || c._id) === String(carId));
-                    if (selectedCar) {
-                        const startDate = new Date(start);
-                        const endDate = new Date(end);
-
-                        // Validate: end_date must be >= start_date
-                        if (endDate < startDate) {
-                            newData.total_amount = '';
-                            setDateError('End date must be on or after start date');
-                        } else {
-                            const diffTime = endDate - startDate;
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                            // Minimum 1 day rental
-                            const duration = diffDays < 1 ? 1 : diffDays;
-                            newData.total_amount = duration * selectedCar.daily_rate;
-                            setDateError('');
-                        }
+                if (start && end) {
+                    const startDate = new Date(start);
+                    const endDate = new Date(end);
+                    if (endDate < startDate) {
+                        setDateError('End date must be on or after start date');
+                    } else {
+                        setDateError('');
                     }
                 } else {
                     setDateError('');
@@ -161,6 +158,8 @@ const Rentals = () => {
                 car_id: '',
                 customer_name: '',
                 customer_phone: '',
+                secondary_phone: '',
+                parent_phone: '',
                 from_location: '',
                 to_location: '',
                 start_date: '',
@@ -168,15 +167,22 @@ const Rentals = () => {
                 end_date: '',
                 end_time: '',
                 total_amount: '',
-                pan_number: '',
-                pan_image_url: '',
+                payment_method: 'cash',
                 aadhar_number: '',
-                aadhar_image_url: '',
+                aadhar_front_image_url: '',
+                aadhar_back_image_url: '',
+                pan_number: '',
+                pan_front_image_url: '',
+                pan_back_image_url: '',
                 license_number: '',
-                license_image_url: ''
+                license_front_image_url: '',
+                license_back_image_url: '',
+                rc_number: '',
+                rc_front_image_url: '',
+                rc_back_image_url: '',
+                car_photos: []
             });
             setShowDocuments(false);
-            setAmountManuallyEdited(false);
             setDateError('');
             fetchRentals();
             fetchAvailableCars();
@@ -199,6 +205,22 @@ const Rentals = () => {
             fetchAvailableCars();
         } catch (error) {
             alert(error.message);
+        }
+    };
+
+    const handleAddCharge = async (chargeData) => {
+        if (!selectedRentalForCharge) return;
+
+        setAddingCharge(true);
+        try {
+            await rentalsApi.addCharge(selectedRentalForCharge.id || selectedRentalForCharge._id, chargeData);
+            setChargeModalOpen(false);
+            setSelectedRentalForCharge(null);
+            fetchRentals();
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            setAddingCharge(false);
         }
     };
 
@@ -372,6 +394,16 @@ const Rentals = () => {
                                                 {rental.status === 'active' && (
                                                     <>
                                                         <button
+                                                            onClick={() => {
+                                                                setSelectedRentalForCharge(rental);
+                                                                setChargeModalOpen(true);
+                                                            }}
+                                                            className="text-xs px-2 py-1 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-md font-medium transition-colors"
+                                                            title="Add Charge"
+                                                        >
+                                                            + Charge
+                                                        </button>
+                                                        <button
                                                             onClick={() => handleStatusUpdate(rental.id, rental.car_id, 'completed')}
                                                             className="text-emerald-600 hover:text-emerald-700 p-1.5 hover:bg-emerald-50 rounded-md transition-colors"
                                                             title="Complete Rental"
@@ -433,6 +465,23 @@ const Rentals = () => {
                         placeholder="e.g. 9876543210"
                         required
                     />
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <Input
+                            label="Secondary Phone"
+                            name="secondary_phone"
+                            value={formData.secondary_phone}
+                            onChange={handleChange}
+                            placeholder="Alternate number"
+                        />
+                        <Input
+                            label="Parent/Guardian Phone"
+                            name="parent_phone"
+                            value={formData.parent_phone}
+                            onChange={handleChange}
+                            placeholder="For security"
+                        />
+                    </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <Input
@@ -508,93 +557,107 @@ const Rentals = () => {
                             className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors text-left"
                         >
                             <div className="flex items-center gap-2">
-                                <IdCard size={18} className="text-primary" />
-                                <span className="font-medium text-foreground">Identity Documents</span>
-                                <Badge variant="secondary" className="text-[10px]">Optional</Badge>
+                                <FileCheck size={18} className="text-primary" />
+                                <span className="font-medium text-foreground">Identity & Vehicle Documents</span>
+                                <Badge variant="secondary" className="text-[10px]">Required</Badge>
                             </div>
                             {showDocuments ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                         </button>
 
                         {showDocuments && (
                             <div className="p-4 space-y-4 bg-background">
-                                {/* PAN Card */}
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                                        <CreditCard size={14} />
-                                        PAN Card
-                                    </div>
-                                    <Input
-                                        name="pan_number"
-                                        value={formData.pan_number}
-                                        onChange={handleChange}
-                                        placeholder="ABCDE1234F"
-                                        className="uppercase"
-                                    />
-                                    <DocumentUpload
-                                        label="PAN Card Photo"
-                                        docType="pan"
-                                        existingUrl={formData.pan_image_url}
-                                        onUpload={(url) => setFormData(prev => ({ ...prev, pan_image_url: url }))}
-                                    />
-                                </div>
-
                                 {/* Aadhar Card */}
-                                <div className="space-y-2 pt-3 border-t border-border">
-                                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                                        <IdCard size={14} />
-                                        Aadhar Card
-                                    </div>
-                                    <Input
-                                        name="aadhar_number"
-                                        value={formData.aadhar_number}
-                                        onChange={handleChange}
-                                        placeholder="1234 5678 9012"
-                                    />
-                                    <DocumentUpload
-                                        label="Aadhar Card Photo"
-                                        docType="aadhar"
-                                        existingUrl={formData.aadhar_image_url}
-                                        onUpload={(url) => setFormData(prev => ({ ...prev, aadhar_image_url: url }))}
-                                    />
-                                </div>
+                                <DocumentUploadDual
+                                    label="Aadhar Card"
+                                    docType="aadhar"
+                                    icon={IdCard}
+                                    numberValue={formData.aadhar_number}
+                                    onNumberChange={(e) => setFormData(prev => ({ ...prev, aadhar_number: e.target.value }))}
+                                    numberPlaceholder="1234 5678 9012"
+                                    frontUrl={formData.aadhar_front_image_url}
+                                    backUrl={formData.aadhar_back_image_url}
+                                    onFrontUpload={(url) => setFormData(prev => ({ ...prev, aadhar_front_image_url: url }))}
+                                    onBackUpload={(url) => setFormData(prev => ({ ...prev, aadhar_back_image_url: url }))}
+                                />
+
+                                {/* PAN Card */}
+                                <DocumentUploadDual
+                                    label="PAN Card"
+                                    docType="pan"
+                                    icon={CreditCard}
+                                    numberValue={formData.pan_number}
+                                    onNumberChange={(e) => setFormData(prev => ({ ...prev, pan_number: e.target.value }))}
+                                    numberPlaceholder="ABCDE1234F"
+                                    frontUrl={formData.pan_front_image_url}
+                                    backUrl={formData.pan_back_image_url}
+                                    onFrontUpload={(url) => setFormData(prev => ({ ...prev, pan_front_image_url: url }))}
+                                    onBackUpload={(url) => setFormData(prev => ({ ...prev, pan_back_image_url: url }))}
+                                />
 
                                 {/* Driving License */}
-                                <div className="space-y-2 pt-3 border-t border-border">
-                                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                                        <CarIcon size={14} />
-                                        Driving License
-                                    </div>
-                                    <Input
-                                        name="license_number"
-                                        value={formData.license_number}
-                                        onChange={handleChange}
-                                        placeholder="TS0120200012345"
-                                        className="uppercase"
-                                    />
-                                    <DocumentUpload
-                                        label="License Photo"
-                                        docType="license"
-                                        existingUrl={formData.license_image_url}
-                                        onUpload={(url) => setFormData(prev => ({ ...prev, license_image_url: url }))}
-                                    />
-                                </div>
+                                <DocumentUploadDual
+                                    label="Driving License"
+                                    docType="license"
+                                    icon={IdCard}
+                                    numberValue={formData.license_number}
+                                    onNumberChange={(e) => setFormData(prev => ({ ...prev, license_number: e.target.value }))}
+                                    numberPlaceholder="TS0120200012345"
+                                    frontUrl={formData.license_front_image_url}
+                                    backUrl={formData.license_back_image_url}
+                                    onFrontUpload={(url) => setFormData(prev => ({ ...prev, license_front_image_url: url }))}
+                                    onBackUpload={(url) => setFormData(prev => ({ ...prev, license_back_image_url: url }))}
+                                />
+
+                                {/* RC (Registration Certificate) */}
+                                <DocumentUploadDual
+                                    label="RC (Registration Certificate)"
+                                    docType="rc"
+                                    icon={CarIcon}
+                                    numberValue={formData.rc_number}
+                                    onNumberChange={(e) => setFormData(prev => ({ ...prev, rc_number: e.target.value }))}
+                                    numberPlaceholder="TS01AB1234"
+                                    frontUrl={formData.rc_front_image_url}
+                                    backUrl={formData.rc_back_image_url}
+                                    onFrontUpload={(url) => setFormData(prev => ({ ...prev, rc_front_image_url: url }))}
+                                    onBackUpload={(url) => setFormData(prev => ({ ...prev, rc_back_image_url: url }))}
+                                />
+
+                                {/* Car Photos */}
+                                <CarPhotoUpload
+                                    photos={formData.car_photos}
+                                    onPhotosChange={(photos) => setFormData(prev => ({ ...prev, car_photos: photos }))}
+                                    maxPhotos={6}
+                                />
                             </div>
                         )}
                     </div>
 
-                    <div>
-                        <Input
-                            label="Total Amount"
-                            name="total_amount"
-                            type="number"
-                            value={formData.total_amount}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Input
+                                label="Total Amount (₹)"
+                                name="total_amount"
+                                type="number"
+                                value={formData.total_amount}
+                                onChange={handleChange}
+                                placeholder="Enter agreed amount"
+                                required
+                            />
+                        </div>
+                        <Select
+                            label="Payment Method"
+                            name="payment_method"
+                            value={formData.payment_method}
                             onChange={handleChange}
-                            placeholder="0.00"
+                            options={[
+                                { value: 'cash', label: '💵 Cash' },
+                                { value: 'upi', label: '📱 UPI' },
+                                { value: 'card', label: '💳 Card' },
+                                { value: 'bank_transfer', label: '🏦 Bank Transfer' },
+                                { value: 'pending', label: '⏳ Pending' },
+                            ]}
                             required
                         />
-                        <p className="mt-1 text-xs text-muted-foreground">
-                            💡 Auto-calculated based on daily rate. You can edit for bargaining.
-                        </p>
                     </div>
 
                     <div className="pt-2">
@@ -630,6 +693,18 @@ const Rentals = () => {
                 }}
                 rental={selectedRentalForDetails}
                 formatCurrency={formatCurrency}
+            />
+
+            {/* Add Charge Modal */}
+            <AddChargeModal
+                isOpen={chargeModalOpen}
+                onClose={() => {
+                    setChargeModalOpen(false);
+                    setSelectedRentalForCharge(null);
+                }}
+                rental={selectedRentalForCharge}
+                onAdd={handleAddCharge}
+                isLoading={addingCharge}
             />
         </div >
     );
