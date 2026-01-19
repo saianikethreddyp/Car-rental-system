@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 
 // Create axios instance
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'https://backend-car-rental-production-a9db.up.railway.app/api',
+    baseURL: import.meta.env.VITE_API_URL || 'https://backend-car-rental-tesg.onrender.com/api',
     headers: {
         'Content-Type': 'application/json'
     }
