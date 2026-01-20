@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatDate } from '../utils/date';
-import { supabase } from '../supabaseClient';
+import { customersApi } from '../api/client';
 import { useSettings } from '../context/SettingsContext';
 import { Search, User, Phone, ShoppingBag, Calendar, Filter, Users, Eye } from 'lucide-react';
 import Card from '../components/ui/Card';
@@ -28,92 +28,22 @@ const Customers = () => {
 
     useEffect(() => {
         fetchCustomers();
-
-        // Real-time subscription for customers
-        const subscription = supabase
-            .channel('customers-changes')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'customers' },
-                () => fetchCustomers()
-            )
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'rentals' },
-                () => fetchCustomers()
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(subscription);
-        };
-    }, []);
+    }, [searchQuery]); // Re-fetch when search changes
 
     const fetchCustomers = async () => {
         try {
             setLoading(true);
-
-            // Fetch all rentals and aggregate customers from them
-            const { data: rentals, error: rentalsError } = await supabase
-                .from('rentals')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (rentalsError) throw rentalsError;
-
-            // Aggregate unique customers from rentals by phone number
-            const customerMap = {};
-
-            rentals.forEach(rental => {
-                const phone = rental.customer_phone;
-                if (!phone) return;
-
-                if (!customerMap[phone]) {
-                    customerMap[phone] = {
-                        id: phone, // Use phone as unique ID
-                        name: rental.customer_name,
-                        phone: rental.customer_phone,
-                        totalRentals: 0,
-                        totalSpent: 0,
-                        lastRentalDate: rental.created_at,
-                        hasActiveRental: false,
-                        rentals: []
-                    };
-                }
-
-                customerMap[phone].totalRentals += 1;
-                customerMap[phone].totalSpent += rental.total_amount || 0;
-                customerMap[phone].rentals.push(rental);
-
-                // Update name if newer rental has different name
-                if (new Date(rental.created_at) > new Date(customerMap[phone].lastRentalDate)) {
-                    customerMap[phone].lastRentalDate = rental.created_at;
-                    customerMap[phone].name = rental.customer_name;
-                }
-
-                if (rental.status === 'active') {
-                    customerMap[phone].hasActiveRental = true;
-                }
-            });
-
-            // Convert map to array and sort by last rental date
-            const customersList = Object.values(customerMap).sort((a, b) =>
-                new Date(b.lastRentalDate) - new Date(a.lastRentalDate)
-            );
-
-            setCustomers(customersList);
-
+            const data = await customersApi.getAll(searchQuery);
+            setCustomers(data);
         } catch (error) {
-            console.error('Error fetching customers:', error.message);
+            console.error('Error fetching customers:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const filteredCustomers = customers.filter(c =>
-        c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.phone?.includes(searchQuery)
-    );
+    // No need for frontend filtering anymore as backend handles it
+    const filteredCustomers = customers;
 
     return (
         <div className="space-y-6">
@@ -135,7 +65,7 @@ const Customers = () => {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                     <input
                         type="text"
-                        placeholder="Search customers by name or phone..."
+                        placeholder="Search by Name, Phone, Aadhar, or PAN..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full bg-background border border-input rounded-lg py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all"

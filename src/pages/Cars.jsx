@@ -6,6 +6,8 @@ import CarCard from '../components/cars/CarCard';
 import CarFormModal from '../components/cars/CarFormModal';
 import DeleteConfirmationModal from '../components/cars/DeleteConfirmationModal';
 import Button from '../components/ui/Button';
+import CarDetailsModal from '../components/cars/CarDetailsModal';
+import { useSettings } from '../context/SettingsContext';
 
 const Cars = () => {
     const [cars, setCars] = useState([]);
@@ -13,6 +15,15 @@ const Cars = () => {
     const [showModal, setShowModal] = useState(false);
     const [editingCar, setEditingCar] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Analytics Modal State
+    const [analyticsModal, setAnalyticsModal] = useState({
+        show: false,
+        car: null
+    });
+
+    const settingsContext = useSettings();
+    const formatCurrency = settingsContext?.formatCurrency;
 
     // Delete Modal State
     const [deleteModal, setDeleteModal] = useState({
@@ -174,6 +185,8 @@ const Cars = () => {
                             car={car}
                             onEdit={handleOpenModal}
                             onDelete={initiateDelete}
+                            // Assuming I will add this prop to CarCard
+                            onView={() => setAnalyticsModal({ show: true, car })}
                             onStatusUpdate={handleStatusUpdate}
                         />
                     ))}
@@ -194,6 +207,13 @@ const Cars = () => {
                 onConfirm={confirmDelete}
                 rentalCount={deleteModal.rentalCount}
                 loading={deleteModal.loading}
+            />
+
+            <CarDetailsModal
+                isOpen={analyticsModal.show}
+                onClose={() => setAnalyticsModal({ show: false, car: null })}
+                car={analyticsModal.car}
+                formatCurrency={formatCurrency}
             />
         </div>
     );

@@ -302,55 +302,6 @@ const Settings = () => {
                             </div>
                         </Card>
                     </section>
-
-                    {/* Preferences Section */}
-                    <section>
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="p-2 rounded-lg bg-emerald-500/10">
-                                <DollarSign className="text-emerald-500" size={20} />
-                            </div>
-                            <h2 className="text-xl font-semibold text-foreground">Preferences</h2>
-                        </div>
-
-                        {/* Currency & Tax Card */}
-                        <Card className="p-6">
-                            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                                <DollarSign size={16} /> Regional Settings
-                            </h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-sm font-medium mb-2 block">Currency</label>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {currencyOptions.map((currency) => (
-                                            <button
-                                                key={currency.value}
-                                                onClick={() => updateSettings({ currency: currency.value })}
-                                                className={`p-3 rounded-lg border-2 transition-all ${settings.currency === currency.value
-                                                    ? 'border-primary bg-primary/5'
-                                                    : 'border-border hover:border-muted-foreground/30'
-                                                    }`}
-                                            >
-                                                <div className="text-lg font-bold">{currency.symbol}</div>
-                                                <div className="text-xs text-muted-foreground">{currency.label}</div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-sm font-medium">Tax Rate:</span>
-                                    <input
-                                        type="number"
-                                        value={settings.taxRate}
-                                        onChange={(e) => updateSettings({ taxRate: e.target.value })}
-                                        className="w-20 h-9 rounded-lg border border-input bg-background px-3 text-sm text-center"
-                                        min="0"
-                                        max="100"
-                                    />
-                                    <span className="text-muted-foreground">%</span>
-                                </div>
-                            </div>
-                        </Card>
-                    </section>
                 </div>
             )}
 
@@ -397,71 +348,6 @@ const Settings = () => {
                             <div className="flex justify-end mt-4">
                                 <Button onClick={handleSaveBusinessProfile}>
                                     <Save size={16} className="mr-2" /> Save Business Profile
-                                </Button>
-                            </div>
-                        </Card>
-                    </section>
-
-                    {/* Rental Defaults */}
-                    <section>
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="p-2 rounded-lg bg-emerald-500/10">
-                                <Car className="text-emerald-500" size={20} />
-                            </div>
-                            <h2 className="text-xl font-semibold text-foreground">Rental Defaults</h2>
-                        </div>
-
-                        <Card className="p-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium flex items-center gap-2">
-                                        <DollarSign size={14} /> Default Daily Rate
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={rentalDefaults.defaultDailyRate}
-                                        onChange={(e) => setRentalDefaults({ ...rentalDefaults, defaultDailyRate: e.target.value })}
-                                        className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium flex items-center gap-2">
-                                        <CreditCard size={14} /> Security Deposit
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={rentalDefaults.securityDeposit}
-                                        onChange={(e) => setRentalDefaults({ ...rentalDefaults, securityDeposit: e.target.value })}
-                                        className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium flex items-center gap-2">
-                                        <AlertTriangle size={14} /> Late Fee (%)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={rentalDefaults.lateFeePercent}
-                                        onChange={(e) => setRentalDefaults({ ...rentalDefaults, lateFeePercent: e.target.value })}
-                                        className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium flex items-center gap-2">
-                                        <Clock size={14} /> Min Rental Days
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={rentalDefaults.minRentalDays}
-                                        onChange={(e) => setRentalDefaults({ ...rentalDefaults, minRentalDays: e.target.value })}
-                                        className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm"
-                                        min="1"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex justify-end mt-4">
-                                <Button onClick={handleSaveRentalDefaults}>
-                                    <Save size={16} className="mr-2" /> Save Defaults
                                 </Button>
                             </div>
                         </Card>
@@ -519,8 +405,7 @@ const Settings = () => {
                         </Card>
                     </section>
                 </div>
-            )
-            }
+            )}
 
             {/* NOTIFICATIONS TAB */}
             {

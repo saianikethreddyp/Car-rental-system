@@ -1,11 +1,11 @@
 import React from 'react';
-import { Edit2, Trash2, Car, CheckCircle, AlertTriangle, Clock, UserCircle } from 'lucide-react';
+import { Edit2, Trash2, Car, CheckCircle, AlertTriangle, Clock, UserCircle, BarChart2 } from 'lucide-react';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
 import { useSettings } from '../../context/SettingsContext';
 
-const CarCard = ({ car, onEdit, onDelete, onStatusUpdate }) => {
+const CarCard = ({ car, onEdit, onDelete, onStatusUpdate, onView }) => {
     const { formatCurrency } = useSettings();
 
     const getStatusConfig = (status) => {
@@ -135,6 +135,13 @@ const CarCard = ({ car, onEdit, onDelete, onStatusUpdate }) => {
 
                     {/* Edit/Delete Actions */}
                     <div className="flex gap-1">
+                        <button
+                            onClick={() => onView && onView(car)}
+                            className="p-2 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                            title="View Analytics"
+                        >
+                            <BarChart2 size={16} />
+                        </button>
                         <button
                             onClick={() => onEdit(car)}
                             className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"

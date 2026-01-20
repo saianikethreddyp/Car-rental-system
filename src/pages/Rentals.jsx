@@ -321,7 +321,7 @@ const Rentals = () => {
                                 </tr>
                             ) : (
                                 filteredRentals.map((rental) => (
-                                    <tr key={rental.id} className="hover:bg-muted/50 transition-colors">
+                                    <tr key={rental._id} className="hover:bg-muted/50 transition-colors">
                                         <td className="p-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground font-bold text-xs">
@@ -329,14 +329,14 @@ const Rentals = () => {
                                                 </div>
                                                 <div>
                                                     <p className="font-medium text-foreground text-sm">{rental.customer_name}</p>
-                                                    <p className="text-xs text-muted-foreground">ID: #{String(rental.id).slice(0, 6)}</p>
+                                                    <p className="text-xs text-muted-foreground">ID: #{String(rental._id).slice(0, 6)}</p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="p-4">
                                             <div className="text-sm text-foreground">
-                                                <p className="font-medium">{rental.cars?.make} {rental.cars?.model}</p>
-                                                <p className="text-xs text-muted-foreground">{rental.cars?.license_plate}</p>
+                                                <p className="font-medium">{rental.car_id?.make} {rental.car_id?.model}</p>
+                                                <p className="text-xs text-muted-foreground">{rental.car_id?.license_plate}</p>
                                             </div>
                                         </td>
                                         <td className="p-4">
@@ -404,14 +404,14 @@ const Rentals = () => {
                                                             + Charge
                                                         </button>
                                                         <button
-                                                            onClick={() => handleStatusUpdate(rental.id, rental.car_id, 'completed')}
+                                                            onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'completed')}
                                                             className="text-emerald-600 hover:text-emerald-700 p-1.5 hover:bg-emerald-50 rounded-md transition-colors"
                                                             title="Complete Rental"
                                                         >
                                                             <CheckCircle size={16} />
                                                         </button>
                                                         <button
-                                                            onClick={() => handleStatusUpdate(rental.id, rental.car_id, 'cancelled')}
+                                                            onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'cancelled')}
                                                             className="text-destructive hover:text-destructive/80 p-1.5 hover:bg-destructive/10 rounded-md transition-colors"
                                                             title="Cancel Rental"
                                                         >
@@ -441,7 +441,7 @@ const Rentals = () => {
                             { value: '', label: 'Select a car...', disabled: true },
                             ...cars.map(car => ({
                                 value: car.id || car._id,
-                                label: `${car.make} ${car.model} (${car.license_plate}) - ${formatCurrency(car.daily_rate)}/day ${car.status !== 'available' ? `(${car.status})` : ''}`,
+                                label: `${car.make} ${car.model} (${car.license_plate}) ${car.status !== 'available' ? `(${car.status})` : ''}`,
                                 disabled: car.status !== 'available'
                             }))
                         ]}

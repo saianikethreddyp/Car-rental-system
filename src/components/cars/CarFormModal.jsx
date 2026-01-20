@@ -193,7 +193,7 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                                     {deletedCarFound.make} {deletedCarFound.model} ({deletedCarFound.year})
                                 </p>
                                 <p className="text-sm text-muted-foreground">
-                                    License: {deletedCarFound.license_plate} • Rate: ₹{deletedCarFound.daily_rate}/day
+                                    License: {deletedCarFound.license_plate}
                                 </p>
                             </div>
                             <div className="mt-3 flex gap-2">
@@ -219,7 +219,8 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -273,16 +274,7 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                    <Input
-                        label="Daily Rate"
-                        name="daily_rate"
-                        type="number"
-                        value={formData.daily_rate}
-                        onChange={handleChange}
-                        placeholder="2500"
-                        required
-                    />
+                <div>
                     <Select
                         label="Status"
                         name="status"
@@ -348,7 +340,7 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                     </Button>
                 </div>
             </form>
-        </Modal>
+        </Modal >
     );
 };
 

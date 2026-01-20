@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { supabase } from '../supabaseClient';
+
 
 // Create axios instance
 const api = axios.create({
@@ -11,16 +11,10 @@ const api = axios.create({
 
 // Request interceptor - Add auth token to all requests
 api.interceptors.request.use(
-    async (config) => {
-        try {
-            // Get the current session from Supabase
-            const { data: { session } } = await supabase.auth.getSession();
-
-            if (session?.access_token) {
-                config.headers.Authorization = `Bearer ${session.access_token}`;
-            }
-        } catch (error) {
-            console.error('Error getting auth token:', error);
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },
@@ -31,14 +25,20 @@ api.interceptors.request.use(
 
 // Response interceptor for error handling
 api.interceptors.response.use(
+    // The original code returned response.data but interceptor here has response.
+    // We MUST return response.data because the application expects it.
     (response) => response.data,
     (error) => {
         // Handle 401 Unauthorized - redirect to login
         if (error.response?.status === 401) {
             console.error('Unauthorized - redirecting to login');
             // Clear any stale auth state
-            supabase.auth.signOut();
-            window.location.href = '/login';
+            localStorage.removeItem('token');
+            // We should use window.location carefully or dispatch an event, 
+            // but for simplicity window.location is fine.
+            if (!window.location.pathname.includes('/login')) {
+                window.location.href = '/login';
+            }
             return Promise.reject(new Error('Session expired. Please login again.'));
         }
 
@@ -94,7 +94,11 @@ export const carsApi = {
     checkDeletedByPlate: (licensePlate) => api.get(`/cars/check-deleted/${encodeURIComponent(licensePlate)}`),
     checkAvailability: (licensePlate) => api.get(`/cars/check-availability/${encodeURIComponent(licensePlate)}`),
     restore: (id) => api.post(`/cars/${id}/restore`),
+    getAnalytics: (id, month, year) => api.get(`/cars/${id}/analytics`, { params: { month, year } }),
+};
 
+export const customersApi = {
+    getAll: (search) => api.get('/customers', { params: { search } }),
 };
 
 export default api;

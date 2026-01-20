@@ -158,6 +158,59 @@ export const FleetCalendar = ({ selectedDate }) => {
 // ============================================
 // 2. UPCOMING RETURNS
 // ============================================
+// Helper Component for Countdown
+const ReturnCountdown = ({ targetDate }) => {
+    const calculateTimeLeft = () => {
+        const difference = +new Date(targetDate) - +new Date();
+        let timeLeft = {};
+
+        if (difference > 0) {
+            timeLeft = {
+                h: Math.floor((difference / (1000 * 60 * 60))), // Total hours
+                m: Math.floor((difference / 1000 / 60) % 60),
+                s: Math.floor((difference / 1000) % 60)
+            };
+        } else {
+            // Overdue logic
+            const absDiff = Math.abs(difference);
+            timeLeft = {
+                overdue: true,
+                h: Math.floor((absDiff / (1000 * 60 * 60))),
+                m: Math.floor((absDiff / 1000 / 60) % 60)
+            };
+        }
+        return timeLeft;
+    };
+
+    const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setTimeLeft(calculateTimeLeft());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [targetDate]);
+
+    if (timeLeft.overdue) {
+        return (
+            <span className="text-sm font-bold text-red-700 bg-red-100 border border-red-200 px-2 py-1 rounded-md shadow-sm">
+                OVERDUE: -{timeLeft.h}h {timeLeft.m}m
+            </span>
+        );
+    }
+
+    if (Object.keys(timeLeft).length === 0) {
+        return <span className="text-sm font-bold text-red-600 animate-pulse">DUE NOW</span>;
+    }
+
+    return (
+        <span className="text-sm font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-1 rounded-md flex items-center gap-1.5 shadow-sm">
+            <Clock size={14} className="text-red-500" />
+            {timeLeft.h}h {timeLeft.m}m {timeLeft.s}s
+        </span>
+    );
+};
+
 export const UpcomingReturns = ({ selectedDate }) => {
 
     const [returns, setReturns] = useState([]);
@@ -222,17 +275,22 @@ export const UpcomingReturns = ({ selectedDate }) => {
                             <div className={`w-2 h-2 rounded-full shrink-0 ${isToday(rental.end_date) ? 'bg-orange-500 animate-pulse' : 'bg-blue-500'
                                 }`}></div>
                             <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-medium text-foreground truncate">{rental.customer_name}</span>
-                                    <Badge
-                                        variant={isToday(rental.end_date) ? 'destructive' : 'secondary'}
-                                        className="text-[10px] px-1.5 py-0"
-                                    >
-                                        {isToday(rental.end_date) ? 'Today' : 'Tomorrow'}
-                                    </Badge>
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-medium text-foreground truncate">{rental.customer_name}</span>
+                                        <Badge
+                                            variant={isToday(rental.end_date) ? 'destructive' : 'secondary'}
+                                            className="text-[10px] px-1.5 py-0"
+                                        >
+                                            {isToday(rental.end_date) ? 'Today' : 'Tomorrow'}
+                                        </Badge>
+                                    </div>
+                                    <ReturnCountdown targetDate={rental.end_date} />
                                 </div>
-                                <p className="text-xs text-muted-foreground truncate">
-                                    {rental.cars?.make} {rental.cars?.model} • {rental.cars?.license_plate}
+                                <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                    <span className="font-medium text-foreground/80">{rental.car_id?.make} {rental.car_id?.model}</span>
+                                    <span className="mx-1">•</span>
+                                    <span className="font-mono bg-background px-1 rounded border border-border">{rental.car_id?.license_plate}</span>
                                 </p>
                             </div>
                             <a
@@ -527,11 +585,17 @@ export const TodaysSchedule = ({ selectedDate }) => {
                                             {formatTime(rental.start_time)}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-foreground truncate">
-                                                {rental.customer_name}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground truncate">
-                                                {rental.cars?.make} {rental.cars?.model} • {rental.from_location || 'No location'}
+                                            <div className="flex items-center justify-between gap-2">
+                                                <p className="text-sm font-medium text-foreground truncate">
+                                                    {rental.customer_name}
+                                                </p>
+                                                {/* Pickup Timer */}
+                                                <ReturnCountdown targetDate={new Date(`${rental.start_date.split('T')[0]}T${rental.start_time || '00:00'}`)} />
+                                            </div>
+                                            <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                                <span className="font-medium text-foreground/80">{rental.car_id?.make} {rental.car_id?.model}</span>
+                                                <span className="mx-1">•</span>
+                                                {rental.from_location || 'No location'}
                                             </p>
                                         </div>
                                         <a

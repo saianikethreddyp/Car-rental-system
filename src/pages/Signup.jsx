@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
-import { Lock, Mail, UserPlus, Sparkles } from 'lucide-react';
+import { Mail, Lock, UserPlus, Sparkles } from 'lucide-react';
 import Button from '../components/ui/Button';
+import { useAuth } from '../context/AuthProvider';
 
 const Signup = () => {
+    const [name, setName] = useState(''); // Added Name field
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [message, setMessage] = useState(null);
     const navigate = useNavigate();
+    const { signup } = useAuth();
 
     const handleSignup = async (e) => {
         e.preventDefault();
@@ -19,21 +21,16 @@ const Signup = () => {
         setMessage(null);
 
         try {
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-            });
+            const { success, error } = await signup(name, email, password);
 
-            if (error) throw error;
-
-            if (data?.session) {
+            if (success) {
                 navigate('/');
             } else {
-                setMessage('Registration successful! Please check your email for the confirmation link.');
+                setError(error);
             }
 
         } catch (err) {
-            setError(err.message);
+            setError(err.message || 'An unexpected error occurred');
         } finally {
             setLoading(false);
         }
@@ -67,6 +64,21 @@ const Signup = () => {
                 )}
 
                 <form onSubmit={handleSignup} className="space-y-6">
+                    <div>
+                        <label className="block text-foreground text-sm font-medium mb-2">Full Name</label>
+                        <div className="relative group">
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="w-full flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 pl-12 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                placeholder="John Doe"
+                                required
+                            />
+                            <UserPlus className="absolute left-4 top-3.5 text-muted-foreground group-focus-within:text-foreground transition-colors" size={18} />
+                        </div>
+                    </div>
+
                     <div>
                         <label className="block text-foreground text-sm font-medium mb-2">Email Address</label>
                         <div className="relative group">

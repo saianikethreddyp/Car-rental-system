@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatDate } from '../../utils/date';
-import { supabase } from '../../supabaseClient';
+import { rentalsApi } from '../../api/client';
 import Modal from '../ui/Modal';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
@@ -22,17 +22,11 @@ const CustomerDetailsModal = ({ isOpen, onClose, customer, formatCurrency, onVie
     const fetchCustomerRentals = async () => {
         try {
             setLoading(true);
-            const { data, error } = await supabase
-                .from('rentals')
-                .select(`
-                    *,
-                    cars (make, model, license_plate)
-                `)
-                .eq('customer_phone', customer.phone)
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-            setRentals(data || []);
+            const response = await rentalsApi.getAll({ customer_phone: customer.phone });
+            // API returns response.data which is the array of rentals (intercepted in client.js)
+            // But wait, client.js interceptor returns response.data.
+            // If the backend returns `res.json(rentals)`, then `response` here IS the rentals array.
+            setRentals(response || []);
         } catch (error) {
             console.error('Error fetching rentals:', error);
         } finally {
@@ -75,6 +69,18 @@ const CustomerDetailsModal = ({ isOpen, onClose, customer, formatCurrency, onVie
                         <p className="text-muted-foreground flex items-center gap-2 mt-1">
                             <Phone size={14} /> {customer.phone}
                         </p>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {customer.aadhar_number && (
+                                <Badge variant="outline" className="text-xs">
+                                    Aadhar: {customer.aadhar_number}
+                                </Badge>
+                            )}
+                            {customer.pan_number && (
+                                <Badge variant="outline" className="text-xs">
+                                    PAN: {customer.pan_number}
+                                </Badge>
+                            )}
+                        </div>
                         {customer.totalRentals >= 5 && (
                             <Badge variant="warning" className="mt-2">
                                 <Award size={12} className="mr-1" /> Loyal Customer
@@ -127,10 +133,10 @@ const CustomerDetailsModal = ({ isOpen, onClose, customer, formatCurrency, onVie
                                             </div>
                                             <div>
                                                 <p className="font-medium text-foreground">
-                                                    {rental.cars?.make} {rental.cars?.model}
+                                                    {rental.car_id?.make} {rental.car_id?.model}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {rental.cars?.license_plate}
+                                                    {rental.car_id?.license_plate}
                                                 </p>
                                             </div>
                                         </div>

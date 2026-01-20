@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
-import { Lock, Mail, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
 import Button from '../components/ui/Button';
+import { useAuth } from '../context/AuthProvider';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -10,6 +10,7 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const { login } = useAuth(); // Use auth context
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -17,15 +18,15 @@ const Login = () => {
         setError(null);
 
         try {
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
+            const { success, error } = await login(email, password);
 
-            if (error) throw error;
-            navigate('/');
+            if (success) {
+                navigate('/');
+            } else {
+                setError(error);
+            }
         } catch (err) {
-            setError(err.message);
+            setError(err.message || 'An unexpected error occurred');
         } finally {
             setLoading(false);
         }
