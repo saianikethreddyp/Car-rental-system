@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { supabase } from '../../supabaseClient';
+import { uploadApi } from '../../api/client';
 import { Camera, Upload, X, Plus, Car } from 'lucide-react';
 
 /**
@@ -57,7 +57,7 @@ const CarPhotoUpload = ({
             ctx.drawImage(video, 0, 0);
             canvas.toBlob(async (blob) => {
                 if (blob) {
-                    await uploadToSupabase(blob);
+                    await uploadToServer(blob);
                 }
             }, 'image/jpeg', 0.8);
             stopCamera();
@@ -68,7 +68,7 @@ const CarPhotoUpload = ({
     const handleFileSelect = async (e) => {
         const file = e.target.files?.[0];
         if (file) {
-            await uploadToSupabase(file);
+            await uploadToServer(file);
         }
         // Reset input
         if (fileInputRef.current) {
@@ -76,31 +76,19 @@ const CarPhotoUpload = ({
         }
     };
 
-    // Upload to Supabase Storage
-    const uploadToSupabase = async (fileOrBlob) => {
+    // Upload to Server
+    const uploadToServer = async (fileOrBlob) => {
         try {
             setUploading(true);
-            const fileName = `car_photo_${Date.now()}.jpg`;
-            const filePath = `rentals/cars/${fileName}`;
 
-            const { error: uploadError } = await supabase.storage
-                .from('documents')
-                .upload(filePath, fileOrBlob, {
-                    contentType: 'image/jpeg',
-                    upsert: true
-                });
-
-            if (uploadError) throw uploadError;
-
-            const { data: { publicUrl } } = supabase.storage
-                .from('documents')
-                .getPublicUrl(filePath);
+            const response = await uploadApi.uploadFile(fileOrBlob);
+            const publicUrl = response.url; // Corrected access
 
             // Add to photos array
             onPhotosChange([...photos, publicUrl]);
         } catch (error) {
             console.error('Upload error:', error);
-            alert('Failed to upload photo. Please try again.');
+            alert('Failed to upload photo: ' + (error.response?.data?.error || error.message));
         } finally {
             setUploading(false);
         }

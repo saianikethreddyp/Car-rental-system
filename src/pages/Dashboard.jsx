@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../utils/date';
-import { supabase } from '../supabaseClient';
+
 import { useSettings } from '../context/SettingsContext';
 import { Car, CalendarDays, DollarSign, Activity, TrendingUp, Users, Plus } from 'lucide-react';
 import Card from '../components/ui/Card';
@@ -44,21 +44,8 @@ const Dashboard = () => {
     useEffect(() => {
         fetchDashboardData(selectedDate);
 
-        // Real-time subscription
-        const subscription = supabase
-            .channel('dashboard-rentals')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'rentals' },
-                () => {
-                    fetchDashboardData(selectedDate); // Re-fetch on any change
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(subscription);
-        };
+        // Real-time subscription removed (Migrated from Supabase)
+        // TODO: Implement Socket.IO or polling if real-time updates are needed
     }, [selectedDate]);
 
     const fetchDashboardData = async (dateStr) => {

@@ -101,4 +101,16 @@ export const customersApi = {
     getAll: (search) => api.get('/customers', { params: { search } }),
 };
 
+export const uploadApi = {
+    uploadFile: (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return api.post('/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+    }
+};
+
 export default api;

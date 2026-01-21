@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { supabase } from '../../supabaseClient';
+import { uploadApi } from '../../api/client';
 import { Camera, Upload, X, Check, RefreshCw, ImageIcon } from 'lucide-react';
 import Button from './Button';
 import Input from './Input';
@@ -114,7 +114,7 @@ const SingleSideUpload = ({
             ctx.drawImage(video, 0, 0);
             canvas.toBlob(async (blob) => {
                 if (blob) {
-                    await uploadToSupabase(blob);
+                    await uploadToServer(blob);
                 }
             }, 'image/jpeg', 0.8);
             stopCamera();
@@ -125,35 +125,23 @@ const SingleSideUpload = ({
     const handleFileSelect = async (e) => {
         const file = e.target.files?.[0];
         if (file) {
-            await uploadToSupabase(file);
+            await uploadToServer(file);
         }
     };
 
-    // Upload to Supabase Storage
-    const uploadToSupabase = async (fileOrBlob) => {
+    // Upload to Server
+    const uploadToServer = async (fileOrBlob) => {
         try {
             setUploading(true);
-            const fileName = `${docType}_${side}_${Date.now()}.jpg`;
-            const filePath = `rentals/${fileName}`;
 
-            const { error: uploadError } = await supabase.storage
-                .from('documents')
-                .upload(filePath, fileOrBlob, {
-                    contentType: 'image/jpeg',
-                    upsert: true
-                });
-
-            if (uploadError) throw uploadError;
-
-            const { data: { publicUrl } } = supabase.storage
-                .from('documents')
-                .getPublicUrl(filePath);
+            const response = await uploadApi.uploadFile(fileOrBlob);
+            const publicUrl = response.url; // Corrected access
 
             setPreview(publicUrl);
             onUpload(publicUrl);
         } catch (error) {
             console.error('Upload error:', error);
-            alert('Failed to upload document. Please try again.');
+            alert('Failed to upload document: ' + (error.response?.data?.error || error.message));
         } finally {
             setUploading(false);
         }

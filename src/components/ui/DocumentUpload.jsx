@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { supabase } from '../../supabaseClient';
+import { uploadApi } from '../../api/client';
 import { Camera, Upload, X, Check, RefreshCw } from 'lucide-react';
 import Button from './Button';
 
@@ -25,9 +25,7 @@ const DocumentUpload = ({
     // Start camera
     const startCamera = async () => {
         try {
-
             setCameraActive(true);
-
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'environment' } // Use back camera on mobile
             });
@@ -39,7 +37,6 @@ const DocumentUpload = ({
         } catch (err) {
             console.error('Camera access error:', err);
             alert('Unable to access camera. Please check permissions or use file upload.');
-
             setCameraActive(false);
         }
     };
@@ -51,7 +48,6 @@ const DocumentUpload = ({
             streamRef.current = null;
         }
         setCameraActive(false);
-
     };
 
     // Capture photo from camera
@@ -62,16 +58,14 @@ const DocumentUpload = ({
 
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0);
 
             canvas.toBlob(async (blob) => {
                 if (blob) {
-                    await uploadToSupabase(blob);
+                    await uploadToServer(blob);
                 }
             }, 'image/jpeg', 0.8);
-
             stopCamera();
         }
     };
@@ -80,38 +74,24 @@ const DocumentUpload = ({
     const handleFileSelect = async (e) => {
         const file = e.target.files?.[0];
         if (file) {
-            await uploadToSupabase(file);
+            await uploadToServer(file);
         }
     };
 
-    // Upload to Supabase Storage
-    const uploadToSupabase = async (fileOrBlob) => {
+    // Upload to Server
+    const uploadToServer = async (fileOrBlob) => {
         try {
             setUploading(true);
 
-            const fileName = `${docType}_${Date.now()}.jpg`;
-            const filePath = `rentals/${fileName}`;
-
-            const { error: uploadError } = await supabase.storage
-                .from('documents')
-                .upload(filePath, fileOrBlob, {
-                    contentType: 'image/jpeg',
-                    upsert: true
-                });
-
-            if (uploadError) throw uploadError;
-
-            // Get public URL
-            const { data: { publicUrl } } = supabase.storage
-                .from('documents')
-                .getPublicUrl(filePath);
+            const response = await uploadApi.uploadFile(fileOrBlob);
+            const publicUrl = response.url; // Corrected access
 
             setPreview(publicUrl);
             onUpload(publicUrl);
 
         } catch (error) {
             console.error('Upload error:', error);
-            alert('Failed to upload document. Please try again.');
+            alert('Failed to upload document: ' + (error.response?.data?.error || error.message));
         } finally {
             setUploading(false);
         }
