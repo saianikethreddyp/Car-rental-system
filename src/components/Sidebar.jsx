@@ -1,14 +1,14 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Car, CalendarDays, Users, LogOut, Settings, Shield, CreditCard } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthProvider';
 import Button from './ui/Button';
 
 const Sidebar = () => {
-    const navigate = useNavigate();
+    const { signOut } = useAuth();
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
+        await signOut();
         navigate('/login');
     };
 

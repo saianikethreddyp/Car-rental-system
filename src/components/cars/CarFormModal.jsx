@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { carsApi } from '../../api/client';
-import { supabase } from '../../supabaseClient';
+// import { supabase } from '../../supabaseClient';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';

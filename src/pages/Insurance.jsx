@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
-import { carsApi } from '../api/client';
+// import { supabase } from '../supabaseClient';
+import { carsApi, uploadApi } from '../api/client';
 import { formatDate } from '../utils/date'; // Added import
 import { Shield, Search, Calendar, Car, Upload, FileText, AlertTriangle, CheckCircle, Clock, X } from 'lucide-react';
 import Card from '../components/ui/Card';
@@ -96,20 +96,8 @@ const Insurance = () => {
         if (!file) return;
 
         try {
-            const carId = selectedCar.id || selectedCar._id;
-            const fileName = `insurance_${carId}_${Date.now()}.${file.name.split('.').pop()}`;
-            const filePath = `insurance/${fileName}`;
-
-            const { error: uploadError } = await supabase.storage
-                .from('documents')
-                .upload(filePath, file, { upsert: true });
-
-            if (uploadError) throw uploadError;
-
-            const { data: { publicUrl } } = supabase.storage
-                .from('documents')
-                .getPublicUrl(filePath);
-
+            const response = await uploadApi.uploadFile(file);
+            const publicUrl = response.url;
             setFormData(prev => ({ ...prev, insurance_document_url: publicUrl }));
         } catch (error) {
             console.error('Upload error:', error);

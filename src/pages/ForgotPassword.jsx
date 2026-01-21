@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+// import { supabase } from '../supabaseClient';
 import { Mail, ArrowLeft, Send, CheckCircle } from 'lucide-react';
 import Button from '../components/ui/Button';
 
@@ -16,11 +16,13 @@ const ForgotPassword = () => {
         setError(null);
 
         try {
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/reset-password`,
-            });
+            // TODO: Replace with backend reset password endpoint
+            // const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            //     redirectTo: `${window.location.origin}/reset-password`,
+            // });
 
-            if (error) throw error;
+            // if (error) throw error;
+            console.log('Reset link triggered (Mock)');
             setSuccess(true);
         } catch (err) {
             setError(err.message);

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
+// import { supabase } from '../supabaseClient'; // Removed Supabase
 import { useAuth } from './AuthProvider';
 import toast from 'react-hot-toast';
 
@@ -33,13 +33,14 @@ export const NotificationProvider = ({ children }) => {
 
     useEffect(() => {
         // Only subscribe when user is authenticated
-        // This prevents cross-tenant data leaks for unauthenticated users
         if (!user) {
             return;
         }
 
-        console.info('[Notifications] Setting up realtime subscriptions for user:', user.id);
+        console.info('[Notifications] Realtime subscriptions disabled (Supabase removed)');
 
+        // TODO: Implement Socket.IO or Polling for Realtime Updates
+        /*
         // Subscribe to Rentals with unique channel name per user session
         const rentalSubscription = supabase
             .channel(`rentals-${user.id}`)
@@ -80,6 +81,7 @@ export const NotificationProvider = ({ children }) => {
             supabase.removeChannel(rentalSubscription);
             supabase.removeChannel(carSubscription);
         };
+        */
     }, [user]);
 
     const markAsRead = (id) => {

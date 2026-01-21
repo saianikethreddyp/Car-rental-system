@@ -7,11 +7,12 @@ import {
     CreditCard, Clock, AlertTriangle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { supabase } from '../supabaseClient';
+// import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthProvider';
 import { useSettings } from '../context/SettingsContext';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import { rentalsApi, customersApi, carsApi } from '../api/client';
 import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
 
@@ -83,13 +84,14 @@ const Settings = () => {
     const handleSaveProfile = async () => {
         try {
             setLoading(true);
-            const { error } = await supabase.auth.updateUser({
-                email: profile.email,
-                data: { full_name: profile.name }
-            });
+            // TODO: Implement backend profile update endpoint
+            // const { error } = await supabase.auth.updateUser({
+            //     email: profile.email,
+            //     data: { full_name: profile.name }
+            // });
 
-            if (error) throw error;
-            toast.success('Profile updated successfully!');
+            // if (error) throw error;
+            toast.success('Profile updated successfully! (Mock)');
         } catch (error) {
             toast.error(error.message);
         } finally {
@@ -110,12 +112,13 @@ const Settings = () => {
 
         try {
             setPasswordLoading(true);
-            const { error } = await supabase.auth.updateUser({
-                password: passwords.newPassword
-            });
+            // TODO: Implement backend password update endpoint
+            // const { error } = await supabase.auth.updateUser({
+            //     password: passwords.newPassword
+            // });
 
-            if (error) throw error;
-            toast.success('Password updated successfully!');
+            // if (error) throw error;
+            toast.success('Password updated successfully! (Mock)');
             setPasswords({ newPassword: '', confirmPassword: '' });
         } catch (error) {
             toast.error(error.message);
@@ -151,16 +154,14 @@ const Settings = () => {
             let headers = [];
 
             if (type === 'rentals') {
-                const { data: rentals } = await supabase
-                    .from('rentals')
-                    .select('*, cars(make, model, license_plate)')
-                    .order('created_at', { ascending: false });
+                const rentalsData = await rentalsApi.getAll();
+                const rentals = rentalsData.rentals || rentalsData;
 
                 data = rentals?.map(r => ({
                     'Customer Name': r.customer_name,
                     'Phone': r.customer_phone,
-                    'Car': `${r.cars?.make} ${r.cars?.model}`,
-                    'License Plate': r.cars?.license_plate,
+                    'Car': r.cars ? `${r.cars?.make} ${r.cars?.model}` : 'N/A',
+                    'License Plate': r.cars?.license_plate || 'N/A',
                     'Start Date': r.start_date,
                     'End Date': r.end_date,
                     'Total Amount': r.total_amount,
@@ -169,10 +170,7 @@ const Settings = () => {
                 })) || [];
                 filename = 'rentals_export.csv';
             } else if (type === 'customers') {
-                const { data: customers } = await supabase
-                    .from('customers')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                const customers = await customersApi.getAll();
 
                 data = customers?.map(c => ({
                     'Name': c.name,
@@ -181,10 +179,7 @@ const Settings = () => {
                 })) || [];
                 filename = 'customers_export.csv';
             } else if (type === 'cars') {
-                const { data: cars } = await supabase
-                    .from('cars')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                const cars = await carsApi.getAll();
 
                 data = cars?.map(c => ({
                     'Make': c.make,

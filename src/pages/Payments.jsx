@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { formatDate } from '../utils/date';
-import { supabase } from '../supabaseClient';
+// import { supabase } from '../supabaseClient';
+import { rentalsApi } from '../api/client';
 import { useSettings } from '../context/SettingsContext';
 import {
     CreditCard, Search, Filter, DollarSign, Clock, CheckCircle,
@@ -44,18 +45,11 @@ const Payments = () => {
     const fetchRentals = async () => {
         try {
             setLoading(true);
-            const { data, error } = await supabase
-                .from('rentals')
-                .select(`
-                    *,
-                    cars (make, model, license_plate)
-                `)
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-            setRentals(data || []);
+            const data = await rentalsApi.getAll(); // API returns rentals array or object
+            setRentals(data.rentals || data || []);
         } catch (error) {
             console.error('Error fetching rentals:', error);
+            toast.error('Failed to load rentals');
         } finally {
             setLoading(false);
         }
@@ -86,15 +80,10 @@ const Payments = () => {
         setSaving(true);
 
         try {
-            const { error } = await supabase
-                .from('rentals')
-                .update({
-                    payment_status: paymentData.payment_status,
-                    amount_paid: paymentData.amount_paid
-                })
-                .eq('id', selectedRental.id);
-
-            if (error) throw error;
+            await rentalsApi.update(selectedRental.id, {
+                payment_status: paymentData.payment_status,
+                amount_paid: paymentData.amount_paid
+            });
 
             toast.success('Payment updated!');
             setIsModalOpen(false);
