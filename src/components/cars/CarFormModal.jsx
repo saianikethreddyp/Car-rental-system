@@ -15,7 +15,7 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         year: new Date().getFullYear(),
         license_plate: '',
         status: 'available',
-        daily_rate: '',
+        daily_rate: 0,
         ownership_type: 'self',
         external_owner_name: '',
     }), []);
@@ -158,7 +158,14 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                 return;
             }
 
-            await onSubmit(formData);
+            // Ensure proper types
+            const submissionData = {
+                ...formData,
+                daily_rate: Number(formData.daily_rate) || 0,
+                year: Number(formData.year) || new Date().getFullYear()
+            };
+
+            await onSubmit(submissionData);
         } catch (error) {
             console.error('Submit error:', error);
         } finally {
@@ -274,13 +281,21 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                     </div>
                 </div>
 
-                <div>
+                <div className="grid grid-cols-2 gap-4">
                     <Select
                         label="Status"
                         name="status"
                         value={formData.status}
                         onChange={handleChange}
                         options={statusOptions}
+                    />
+                    <Input
+                        label="Daily Rate (₹)"
+                        name="daily_rate"
+                        type="number"
+                        value={formData.daily_rate}
+                        onChange={handleChange}
+                        placeholder="2000"
                     />
                 </div>
 
