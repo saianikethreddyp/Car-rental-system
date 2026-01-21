@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { dashboardApi } from '../../api/client';
-// Removed: import { supabase } from '../../supabaseClient';
+
 import { useSettings } from '../../context/SettingsContext';
 import {
     Calendar,

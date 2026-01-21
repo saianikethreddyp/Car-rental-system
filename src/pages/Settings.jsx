@@ -7,7 +7,7 @@ import {
     CreditCard, Clock, AlertTriangle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-// import { supabase } from '../supabaseClient';
+
 import { useAuth } from '../context/AuthProvider';
 import { useSettings } from '../context/SettingsContext';
 import Card from '../components/ui/Card';

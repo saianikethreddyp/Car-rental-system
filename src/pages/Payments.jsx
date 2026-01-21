@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatDate } from '../utils/date';
-// import { supabase } from '../supabaseClient';
+
 import { rentalsApi } from '../api/client';
 import { useSettings } from '../context/SettingsContext';
 import {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// import { supabase } from '../supabaseClient';
+
 import { carsApi, uploadApi } from '../api/client';
 import { formatDate } from '../utils/date'; // Added import
 import { Shield, Search, Calendar, Car, Upload, FileText, AlertTriangle, CheckCircle, Clock, X } from 'lucide-react';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-// import { supabase } from '../supabaseClient';
+
 import { Mail, ArrowLeft, Send, CheckCircle } from 'lucide-react';
 import Button from '../components/ui/Button';
 

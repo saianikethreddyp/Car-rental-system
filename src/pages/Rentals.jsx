@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { formatDate } from '../utils/date';
 import { rentalsApi, carsApi } from '../api/client';
-// Removed: import { supabase } from '../supabaseClient';
+
 import { useSettings } from '../context/SettingsContext';
 import { Plus, Search, Calendar, Phone, CheckCircle, XCircle, Clock, Filter, FileText, ChevronDown, ChevronUp, CreditCard, IdCard, Car as CarIcon, Eye } from 'lucide-react';
 import Modal from '../components/ui/Modal';
