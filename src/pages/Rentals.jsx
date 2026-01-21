@@ -147,10 +147,8 @@ const Rentals = () => {
 
         try {
             // Create rental directly with status='active'
+            // Backend will automatically set car to 'rented'
             await rentalsApi.create({ ...formData, status: 'active' });
-
-            // Update car status
-            await carsApi.update(formData.car_id, { status: 'rented' });
 
             // Reset form
             setIsModalOpen(false);
@@ -196,10 +194,7 @@ const Rentals = () => {
     const handleStatusUpdate = async (rentalId, carId, newStatus) => {
         try {
             await rentalsApi.update(rentalId, { status: newStatus });
-
-            if (newStatus === 'completed' || newStatus === 'cancelled') {
-                await carsApi.update(carId, { status: 'available' });
-            }
+            // Backend automatically updates car availability based on status change
 
             fetchRentals();
             fetchAvailableCars();

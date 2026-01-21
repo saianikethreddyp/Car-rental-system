@@ -139,9 +139,9 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
                         <span className="text-xs text-muted-foreground uppercase tracking-wider">Vehicle</span>
                         <p className="font-medium text-foreground flex items-center gap-2">
                             <Car size={14} className="text-primary" />
-                            {rental.cars?.make} {rental.cars?.model}
+                            {rental.car_id?.make} {rental.car_id?.model}
                         </p>
-                        <p className="text-xs text-muted-foreground">{rental.cars?.license_plate}</p>
+                        <p className="text-xs text-muted-foreground">{rental.car_id?.license_plate}</p>
                     </div>
                     <div className="space-y-1">
                         <span className="text-xs text-muted-foreground uppercase tracking-wider">Amount</span>

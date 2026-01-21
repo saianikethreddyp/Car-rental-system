@@ -101,7 +101,7 @@ const Payments = () => {
         const matchesSearch =
             rental.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             rental.customer_phone?.includes(searchQuery) ||
-            rental.cars?.license_plate?.toLowerCase().includes(searchQuery.toLowerCase());
+            rental.car_id?.license_plate?.toLowerCase().includes(searchQuery.toLowerCase());
 
         if (!matchesSearch) return false;
 
@@ -255,8 +255,8 @@ const Payments = () => {
                                                 <div className="flex items-center gap-2">
                                                     <Car size={14} className="text-muted-foreground" />
                                                     <div>
-                                                        <p className="text-sm text-foreground">{rental.cars?.make} {rental.cars?.model}</p>
-                                                        <p className="text-xs text-muted-foreground">{rental.cars?.license_plate}</p>
+                                                        <p className="text-sm text-foreground">{rental.car_id?.make} {rental.car_id?.model}</p>
+                                                        <p className="text-xs text-muted-foreground">{rental.car_id?.license_plate}</p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -313,7 +313,7 @@ const Payments = () => {
                                 <span className="font-bold text-lg">{formatCurrency(selectedRental.total_amount)}</span>
                             </div>
                             <div className="flex justify-between items-center text-sm text-muted-foreground">
-                                <span>{selectedRental.cars?.make} {selectedRental.cars?.model}</span>
+                                <span>{selectedRental.car_id?.make} {selectedRental.car_id?.model}</span>
                                 <span>{formatDate(selectedRental.start_date)} - {formatDate(selectedRental.end_date)}</span>
                             </div>
                         </div>

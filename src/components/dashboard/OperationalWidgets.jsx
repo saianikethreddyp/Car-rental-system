@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { dashboardApi } from '../../api/client';
+import { dashboardApi, carsApi } from '../../api/client';
+import toast from 'react-hot-toast';
 
 import { useSettings } from '../../context/SettingsContext';
 import {
@@ -338,15 +339,12 @@ export const MaintenanceAlerts = () => {
 
     const handleMarkAvailable = async (carId) => {
         try {
-            const { error } = await supabase
-                .from('cars')
-                .update({ status: 'available' })
-                .eq('id', carId);
-
-            if (error) throw error;
+            await carsApi.update(carId, { status: 'available' });
+            toast.success('Car marked as ready');
             fetchAlerts();
         } catch (error) {
             console.error('Error updating car status:', error);
+            toast.error('Failed to update car status');
         }
     };
 

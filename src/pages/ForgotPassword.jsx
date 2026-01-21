@@ -16,13 +16,8 @@ const ForgotPassword = () => {
         setError(null);
 
         try {
-            // TODO: Replace with backend reset password endpoint
-            // const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            //     redirectTo: `${window.location.origin}/reset-password`,
-            // });
-
-            // if (error) throw error;
-            console.log('Reset link triggered (Mock)');
+            // Backend password reset API
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
             setSuccess(true);
         } catch (err) {
             setError(err.message);

@@ -10,8 +10,8 @@ export const formatDate = (dateString, includeTime = false) => {
     const year = date.getFullYear()
 
     if (includeTime) {
-        return `${day}/${month}/${year} ${date.toLocaleTimeString()}`
+        return `${day}-${month}-${year} ${date.toLocaleTimeString()}`
     }
 
-    return `${day}/${month}/${year}`
+    return `${day}-${month}-${year}`
 }

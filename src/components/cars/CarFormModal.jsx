@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { carsApi } from '../../api/client';
+import { carsApi, rentalsApi } from '../../api/client';
 
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
@@ -150,6 +150,26 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         setIsSubmitting(true);
 
         try {
+            // Check for conflict: If setting to available but has active rental
+            // Only applicable for existing cars (initialData exists)
+            if (initialData && formData.status === 'available' && initialData.status !== 'available') {
+                const activeRentals = await rentalsApi.getAll({
+                    car_id: initialData.id || initialData._id,
+                    status: 'active'
+                });
+
+                if (activeRentals && activeRentals.length > 0) {
+                    const rental = activeRentals[0];
+                    if (window.confirm(`This car has an active booking (Rental ID: #${String(rental._id).slice(0, 6)}). Do you want to cancel that booking and free the car?`)) {
+                        await rentalsApi.update(rental._id, { status: 'cancelled' });
+                        toast.success('Active rental cancelled successfully');
+                    } else {
+                        setIsSubmitting(false);
+                        return;
+                    }
+                }
+            }
+
             // Validate license plate uniqueness
             const plateError = await validateLicensePlate(formData.license_plate);
             if (plateError) {

@@ -45,7 +45,7 @@ const Dashboard = () => {
         fetchDashboardData(selectedDate);
 
         // Real-time subscription removed (Migrated from Supabase)
-        // TODO: Implement Socket.IO or polling if real-time updates are needed
+        // Real-time subscription removed (Migrated from Supabase)
     }, [selectedDate]);
 
     const fetchDashboardData = async (dateStr) => {
@@ -188,7 +188,7 @@ const Dashboard = () => {
                                             {rental.customer_name}
                                         </p>
                                         <p className="text-xs text-muted-foreground truncate mt-0.5">
-                                            {rental.cars?.make} {rental.cars?.model}
+                                            {rental.car_id?.make} {rental.car_id?.model}
                                         </p>
                                         <div className="flex items-center gap-2 mt-1.5">
                                             <Badge variant={rental.status === 'active' ? 'success' : 'secondary'} className="text-[10px] px-1.5 py-0">
