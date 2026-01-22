@@ -286,8 +286,123 @@ const Rentals = () => {
                 </div>
             </Card>
 
-            {/* Rentals Table */}
-            <Card className="overflow-hidden p-0 border border-border shadow-sm">
+            {/* Rentals - Mobile Card View (< md breakpoint) */}
+            <div className="md:hidden space-y-3">
+                {loading ? (
+                    <Card className="p-8 text-center">
+                        <div className="flex justify-center mb-2">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        </div>
+                        <p className="text-muted-foreground">Loading rentals...</p>
+                    </Card>
+                ) : filteredRentals.length === 0 ? (
+                    <Card className="p-12 text-center">
+                        <p className="text-muted-foreground">No rentals found matching your criteria.</p>
+                    </Card>
+                ) : (
+                    filteredRentals.map((rental) => (
+                        <Card key={rental._id} className="p-4 space-y-3">
+                            {/* Header */}
+                            <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground font-bold">
+                                        {rental.customer_name.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold text-foreground">{rental.customer_name}</p>
+                                        <p className="text-xs text-muted-foreground">ID: #{String(rental._id).slice(0, 6)}</p>
+                                    </div>
+                                </div>
+                                <Badge variant={
+                                    rental.status === 'active' ? 'success' :
+                                        rental.status === 'completed' ? 'secondary' : 'destructive'
+                                }>
+                                    {rental.status}
+                                </Badge>
+                            </div>
+
+                            {/* Car Info */}
+                            <div className="pt-2 border-t border-border">
+                                <div className="flex items-center gap-2 text-sm">
+                                    <CarIcon size={14} className="text-muted-foreground" />
+                                    <span className="font-medium">{rental.car_id?.make} {rental.car_id?.model}</span>
+                                    <span className="text-muted-foreground">• {rental.car_id?.license_plate}</span>
+                                </div>
+                            </div>
+
+                            {/* Duration */}
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div>
+                                    <p className="text-muted-foreground mb-1">Start</p>
+                                    <p className="font-medium">{formatDate(rental.start_date)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground mb-1">End</p>
+                                    <p className="font-medium">{formatDate(rental.end_date)}</p>
+                                </div>
+                            </div>
+
+                            {/* Amount */}
+                            <div className="pt-2 border-t border-border">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">Total Amount</span>
+                                    <span className="text-lg font-bold text-foreground">{formatCurrency(rental.total_amount)}</span>
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="pt-2 border-t border-border flex flex-wrap gap-2">
+                                <button
+                                    onClick={() => {
+                                        setSelectedRentalForDetails(rental);
+                                        setDetailsModalOpen(true);
+                                    }}
+                                    className="flex-1 min-w-[100px] px-3 py-2 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-medium transition-colors flex items-center justify-center gap-1"
+                                >
+                                    <Eye size={14} /> View
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setSelectedRentalForInvoice(rental);
+                                        setInvoiceModalOpen(true);
+                                    }}
+                                    className="flex-1 min-w-[100px] px-3 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-lg font-medium transition-colors flex items-center justify-center gap-1"
+                                >
+                                    <FileText size={14} /> Invoice
+                                </button>
+                                {rental.status === 'active' && (
+                                    <>
+                                        <button
+                                            onClick={() => {
+                                                setSelectedRentalForCharge(rental);
+                                                setChargeModalOpen(true);
+                                            }}
+                                            className="px-3 py-2 text-sm bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-lg font-medium transition-colors"
+                                        >
+                                            + Charge
+                                        </button>
+                                        <button
+                                            onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'completed')}
+                                            className="px-3 py-2 text-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg font-medium transition-colors flex items-center gap-1"
+                                        >
+                                            <CheckCircle size={14} /> Complete
+                                        </button>
+                                        <button
+                                            onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'cancelled')}
+                                            className="px-3 py-2 text-sm bg-red-50 text-red-700 hover:bg-red-100 rounded-lg font-medium transition-colors flex items-center gap-1"
+                                        >
+                                            <XCircle size={14} /> Cancel
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </Card>
+                    ))
+                )}
+            </div>
+
+            {/* Rentals Table - Desktop View (>= md breakpoint) */}
+            <Card className="hidden md:block overflow-hidden p-0 border border-border shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-muted/50 border-b border-border">
@@ -444,7 +559,7 @@ const Rentals = () => {
                         ]}
                         required
                     />
-                   
+
 
                     <Input
                         label="Your Name (Operator)"
@@ -474,7 +589,7 @@ const Rentals = () => {
                         required
                     />
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input
                             label="Secondary Phone"
                             name="secondary_phone"
@@ -491,7 +606,7 @@ const Rentals = () => {
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input
                             label="From Location"
                             name="from_location"
@@ -510,7 +625,7 @@ const Rentals = () => {
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input
                             label="Start Date"
                             name="start_date"
@@ -529,7 +644,7 @@ const Rentals = () => {
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input
                             label="End Date"
                             name="end_date"
@@ -640,7 +755,7 @@ const Rentals = () => {
                         )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <Input
                                 label="Total Amount (₹)"

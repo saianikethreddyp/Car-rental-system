@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Search, Bell } from 'lucide-react';
+import { Search, Bell, Menu } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthProvider';
 
-const Header = () => {
+const Header = ({ toggleMobileMenu, isMobileMenuOpen }) => {
     const location = useLocation();
     const { user } = useAuth();
     const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications();
@@ -17,9 +17,19 @@ const Header = () => {
     };
 
     return (
-        <header className="h-16 flex items-center justify-between px-6 sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
-            {/* Page Title */}
-            <div>
+        <header className="h-16 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
+            {/* Left Section: Hamburger + Title */}
+            <div className="flex items-center gap-3">
+                {/* Hamburger Menu - Mobile Only */}
+                <button
+                    onClick={toggleMobileMenu}
+                    className="lg:hidden p-2 -ml-2 rounded-md text-foreground hover:bg-secondary transition-colors"
+                    aria-label="Toggle menu"
+                >
+                    <Menu size={24} />
+                </button>
+
+                {/* Page Title */}
                 <h2 className="text-lg font-semibold text-foreground">
                     {getPageTitle(location.pathname)}
                 </h2>

@@ -8,7 +8,7 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { dashboardApi } from '../api/client';
-import { FleetCalendar, UpcomingReturns, MaintenanceAlerts, TodaysSchedule } from '../components/dashboard/OperationalWidgets';
+import { FleetCalendar, UpcomingReturns, MaintenanceAlerts } from '../components/dashboard/OperationalWidgets';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -71,36 +71,38 @@ const Dashboard = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground">Overview</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">Overview</h1>
                     <p className="text-muted-foreground mt-1">Welcome back, here's what's happening today.</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                     {/* Quick Actions */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex gap-2">
                         <Button
                             size="sm"
                             onClick={() => navigate('/rentals')}
-                            className="gap-2"
+                            className="flex-1 sm:flex-none gap-2"
                         >
                             <Plus size={16} />
-                            Add Booking
+                            <span className="hidden sm:inline">Add Booking</span>
+                            <span className="sm:hidden">Booking</span>
                         </Button>
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => navigate('/cars')}
-                            className="gap-2"
+                            className="flex-1 sm:flex-none gap-2"
                         >
                             <Car size={16} />
-                            Add Vehicle
+                            <span className="hidden sm:inline">Add Vehicle</span>
+                            <span className="sm:hidden">Vehicle</span>
                         </Button>
                     </div>
 
                     {/* Date Filter */}
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-input bg-background shadow-sm">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-input bg-background shadow-sm">
                         <span className="text-muted-foreground text-sm">Date:</span>
                         <input
                             type="date"
@@ -112,8 +114,8 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Stats Grid - Responsive */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 <StatsCard
                     title="Fleet Status"
                     value={`${stats.availableCars}/${stats.totalCars}`}
@@ -154,9 +156,6 @@ const Dashboard = () => {
                 <div className="lg:col-span-2">
                     <FleetCalendar selectedDate={selectedDate} />
                 </div>
-
-                {/* Today's Schedule */}
-                <TodaysSchedule selectedDate={selectedDate} />
 
                 {/* Upcoming Returns */}
                 <UpcomingReturns selectedDate={selectedDate} />

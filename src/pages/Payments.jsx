@@ -80,7 +80,7 @@ const Payments = () => {
         setSaving(true);
 
         try {
-            await rentalsApi.update(selectedRental.id, {
+            await rentalsApi.update(selectedRental._id, {
                 payment_status: paymentData.payment_status,
                 amount_paid: paymentData.amount_paid
             });
@@ -206,8 +206,89 @@ const Payments = () => {
                 </div>
             </Card>
 
-            {/* Table */}
-            <Card>
+            {/* Payments - Mobile Card View */}
+            <div className="md:hidden space-y-3">
+                {loading ? (
+                    <Card className="p-8 text-center">
+                        <div className="flex justify-center mb-2">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        </div>
+                        <p className="text-muted-foreground">Loading payments...</p>
+                    </Card>
+                ) : filteredRentals.length === 0 ? (
+                    <Card className="p-12 text-center">
+                        <CreditCard size={40} className="mx-auto text-muted-foreground/40 mb-3" />
+                        <p className="text-muted-foreground">No payments found</p>
+                    </Card>
+                ) : (
+                    filteredRentals.map((rental) => {
+                        const paymentStatus = getPaymentStatus(rental);
+                        const totalAmount = Number(rental.total_amount) || 0;
+                        const amountPaid = Number(rental.amount_paid) || 0;
+                        const balance = totalAmount - amountPaid;
+
+                        return (
+                            <Card key={rental._id} className="p-4 space-y-3">
+                                {/* Header */}
+                                <div className="flex items-start justify-between">
+                                    <div>
+                                        <p className="font-semibold text-foreground">{rental.customer_name}</p>
+                                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <Phone size={10} /> {rental.customer_phone}
+                                        </p>
+                                    </div>
+                                    <Badge variant={paymentStatus.variant}>{paymentStatus.label}</Badge>
+                                </div>
+
+                                {/* Car Info */}
+                                <div className="pt-2 border-t border-border">
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Car size={14} className="text-muted-foreground" />
+                                        <span className="font-medium">{rental.car_id?.make} {rental.car_id?.model}</span>
+                                        <span className="text-muted-foreground">• {rental.car_id?.license_plate}</span>
+                                    </div>
+                                </div>
+
+                                {/* Dates */}
+                                <div className="text-xs text-muted-foreground">
+                                    {formatDate(rental.start_date)} - {formatDate(rental.end_date)}
+                                </div>
+
+                                {/* Financial Summary */}
+                                <div className="pt-2 border-t border-border space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm text-muted-foreground">Total Amount</span>
+                                        <span className="font-semibold text-foreground">{formatCurrency(totalAmount)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm text-muted-foreground">Paid</span>
+                                        <span className="font-semibold text-emerald-600">{formatCurrency(amountPaid)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                                        <span className="text-sm font-medium text-foreground">Balance</span>
+                                        <span className={`text-lg font-bold ${balance > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                            {formatCurrency(balance)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Action */}
+                                <div className="pt-2">
+                                    <button
+                                        onClick={() => openPaymentModal(rental)}
+                                        className="w-full px-4 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg font-medium transition-colors"
+                                    >
+                                        Update Payment
+                                    </button>
+                                </div>
+                            </Card>
+                        );
+                    })
+                )}
+            </div>
+
+            {/* Table - Desktop View */}
+            <Card className="hidden md:block">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
@@ -242,7 +323,7 @@ const Payments = () => {
                                     const balance = totalAmount - amountPaid;
 
                                     return (
-                                        <tr key={rental.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                                        <tr key={rental._id} className="border-b border-border hover:bg-muted/50 transition-colors">
                                             <td className="p-4">
                                                 <div>
                                                     <p className="font-medium text-foreground">{rental.customer_name}</p>
@@ -341,7 +422,20 @@ const Payments = () => {
                             <input
                                 type="number"
                                 value={paymentData.amount_paid}
-                                onChange={(e) => setPaymentData({ ...paymentData, amount_paid: e.target.value })}
+                                onChange={(e) => {
+                                    const amount = Number(e.target.value);
+                                    let status = 'pending';
+                                    const total = Number(selectedRental.total_amount) || 0;
+
+                                    if (amount >= total) status = 'paid';
+                                    else if (amount > 0) status = 'partial';
+
+                                    setPaymentData({
+                                        ...paymentData,
+                                        amount_paid: e.target.value,
+                                        payment_status: status
+                                    });
+                                }}
                                 className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm"
                                 placeholder="Enter amount paid"
                             />
