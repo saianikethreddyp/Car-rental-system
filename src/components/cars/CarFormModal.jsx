@@ -14,6 +14,8 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         model: '',
         year: new Date().getFullYear(),
         license_plate: '',
+        created_by: '', // FIX #5: Operator accountability
+        modified_by: '',
         status: 'available',
         daily_rate: 0,
         ownership_type: 'self',
@@ -24,7 +26,13 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     const resetKey = `${isOpen}-${initialData?.id || 'new'}`;
 
     // Initialize form data based on initialData or defaults
-    const getInitialFormData = () => initialData ? initialData : defaultFormData;
+    const getInitialFormData = () => {
+        const baseData = { ...defaultFormData, ...(initialData || {}) };
+        if (initialData) {
+            baseData.modified_by = '';
+        }
+        return baseData;
+    };
     const [formData, setFormData] = useState(getInitialFormData);
     const [lastResetKey, setLastResetKey] = useState(resetKey);
     const [licensePlateError, setLicensePlateError] = useState('');
@@ -193,6 +201,11 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         }
     };
 
+    const operatorFieldName = initialData ? 'modified_by' : 'created_by';
+    const operatorPlaceholder = initialData
+        ? 'Who is updating this vehicle?'
+        : 'Who is adding this vehicle?';
+
     const statusOptions = [
         { value: 'available', label: 'Available' },
         { value: 'rented', label: 'Rented' },
@@ -300,6 +313,15 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                         </p>
                     </div>
                 </div>
+
+                <Input
+                    label="Your Name (Operator)"
+                    name={operatorFieldName}
+                    value={formData[operatorFieldName] || ''}
+                    onChange={handleChange}
+                    placeholder={operatorPlaceholder}
+                    required
+                />
 
                 <div className="grid grid-cols-2 gap-4">
                     <Select

@@ -79,7 +79,11 @@ const Cars = () => {
     // --- Status Update Logic ---
     const handleStatusUpdate = async (id, newStatus) => {
         try {
-            await carsApi.update(id, { status: newStatus });
+            const operatorName = window.prompt('Enter your name to update vehicle status:');
+            if (!operatorName) {
+                return;
+            }
+            await carsApi.update(id, { status: newStatus, modified_by: operatorName.trim() });
             // Optimistic update
             setCars(cars.map(c => c.id === id ? { ...c, status: newStatus } : c));
             toast.success(`Car marked as ${newStatus}`);

@@ -49,6 +49,7 @@ const Rentals = () => {
     const [addingCharge, setAddingCharge] = useState(false);
     const [formData, setFormData] = useState({
         car_id: '',
+        created_by: '', // FIX #5: Operator name
         customer_name: '',
         customer_phone: '',
         secondary_phone: '',
@@ -154,6 +155,7 @@ const Rentals = () => {
             setIsModalOpen(false);
             setFormData({
                 car_id: '',
+                created_by: '',
                 customer_name: '',
                 customer_phone: '',
                 secondary_phone: '',
@@ -442,6 +444,17 @@ const Rentals = () => {
                         ]}
                         required
                     />
+                   
+
+                    <Input
+                        label="Your Name (Operator)"
+                        name="created_by"
+                        value={formData.created_by}
+                        onChange={handleChange}
+                        placeholder="Who is creating this booking?"
+                        required
+                    />
+
 
                     <Input
                         label="Customer Name"
