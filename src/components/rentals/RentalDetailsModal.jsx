@@ -7,7 +7,7 @@ import { Phone, MapPin, Calendar, Clock, CreditCard, IdCard, Car, ExternalLink }
 /**
  * DocumentCard - Displays identity document with front/back previews
  */
-const DocumentCard = ({ title, number, frontUrl, backUrl, icon: IconComponent }) => (
+const DocumentCard = ({ title, number, frontUrl, backUrl, icon: IconComponent, onView }) => (
     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
         <div className="flex items-center gap-2">
             <IconComponent size={16} className="text-primary" />
@@ -23,11 +23,9 @@ const DocumentCard = ({ title, number, frontUrl, backUrl, icon: IconComponent })
             <div>
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Front</span>
                 {frontUrl ? (
-                    <a
-                        href={frontUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block relative group mt-1"
+                    <div
+                        onClick={() => onView(frontUrl)}
+                        className="block relative group mt-1 cursor-pointer"
                     >
                         <img
                             src={frontUrl}
@@ -39,7 +37,7 @@ const DocumentCard = ({ title, number, frontUrl, backUrl, icon: IconComponent })
                                 <ExternalLink size={10} /> View
                             </span>
                         </div>
-                    </a>
+                    </div>
                 ) : (
                     <div className="w-full h-20 bg-muted rounded-md border border-dashed border-border flex items-center justify-center mt-1">
                         <span className="text-[9px] text-muted-foreground">No photo</span>
@@ -50,11 +48,9 @@ const DocumentCard = ({ title, number, frontUrl, backUrl, icon: IconComponent })
             <div>
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Back</span>
                 {backUrl ? (
-                    <a
-                        href={backUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block relative group mt-1"
+                    <div
+                        onClick={() => onView(backUrl)}
+                        className="block relative group mt-1 cursor-pointer"
                     >
                         <img
                             src={backUrl}
@@ -66,7 +62,7 @@ const DocumentCard = ({ title, number, frontUrl, backUrl, icon: IconComponent })
                                 <ExternalLink size={10} /> View
                             </span>
                         </div>
-                    </a>
+                    </div>
                 ) : (
                     <div className="w-full h-20 bg-muted rounded-md border border-dashed border-border flex items-center justify-center mt-1">
                         <span className="text-[9px] text-muted-foreground">No photo</span>
@@ -81,6 +77,8 @@ const DocumentCard = ({ title, number, frontUrl, backUrl, icon: IconComponent })
  * RentalDetailsModal - Shows full rental details including customer documents
  */
 const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
+    const [previewImage, setPreviewImage] = React.useState(null);
+
     if (!rental) return null;
 
     const formatTime = (time) => {
@@ -257,6 +255,7 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
                             frontUrl={rental.aadhar_front_image_url}
                             backUrl={rental.aadhar_back_image_url}
                             icon={IdCard}
+                            onView={setPreviewImage}
                         />
                         <DocumentCard
                             title="PAN Card"
@@ -264,6 +263,7 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
                             frontUrl={rental.pan_front_image_url}
                             backUrl={rental.pan_back_image_url}
                             icon={CreditCard}
+                            onView={setPreviewImage}
                         />
                         <DocumentCard
                             title="Driving License"
@@ -271,6 +271,7 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
                             frontUrl={rental.license_front_image_url}
                             backUrl={rental.license_back_image_url}
                             icon={IdCard}
+                            onView={setPreviewImage}
                         />
                         <DocumentCard
                             title="RC (Registration Certificate)"
@@ -278,6 +279,7 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
                             frontUrl={rental.rc_front_image_url}
                             backUrl={rental.rc_back_image_url}
                             icon={Car}
+                            onView={setPreviewImage}
                         />
                     </div>
                 </div>
@@ -291,12 +293,10 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
                         </h4>
                         <div className="grid grid-cols-3 gap-2">
                             {rental.car_photos.map((url, index) => (
-                                <a
+                                <div
                                     key={index}
-                                    href={url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="relative group aspect-square rounded-lg overflow-hidden border border-border"
+                                    onClick={() => setPreviewImage(url)}
+                                    className="relative group aspect-square rounded-lg overflow-hidden border border-border cursor-pointer"
                                 >
                                     <img
                                         src={url}
@@ -306,7 +306,7 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
                                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                         <span className="text-white text-xs">View</span>
                                     </div>
-                                </a>
+                                </div>
                             ))}
                         </div>
                     </div>
@@ -317,7 +317,31 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
                     <p>Created: {formatDate(rental.created_at, true)}</p>
                 </div>
             </div>
-        </Modal>
+
+
+            {/* Image Preview Overlay */}
+            {
+                previewImage && (
+                    <div
+                        className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-200"
+                        onClick={() => setPreviewImage(null)}
+                    >
+                        <button
+                            onClick={() => setPreviewImage(null)}
+                            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                        </button>
+                        <img
+                            src={previewImage}
+                            alt="Preview"
+                            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                )
+            }
+        </Modal >
     );
 };
 
