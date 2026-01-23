@@ -117,11 +117,13 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
             return 'License plate is required';
         }
 
+
         // Check for valid format (letters and numbers, typically 6-12 chars like TS08FA2898)
-        const plateRegex = /^[A-Z0-9]{6,12}$/;
-        if (!plateRegex.test(plate)) {
-            return 'Invalid format. Use letters and numbers only (e.g., TS08FA2898)';
-        }
+        // Validation removed as per user request
+        // const plateRegex = /^[A-Z0-9]{6,12}$/;
+        // if (!plateRegex.test(plate)) {
+        //    return 'Invalid format. Use letters and numbers only (e.g., TS08FA2898)';
+        // }
 
         try {
             // Check uniqueness via Backend API
@@ -308,7 +310,7 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                             {isCheckingDeleted ? (
                                 <span className="text-primary">Checking...</span>
                             ) : (
-                                'Format: Letters and numbers (e.g., TS08FA2898)'
+                                'Unique identifier for the vehicle'
                             )}
                         </p>
                     </div>

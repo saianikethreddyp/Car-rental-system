@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { carsApi, uploadApi } from '../api/client';
 import { formatDate } from '../utils/date'; // Added import
-import { Shield, Search, Calendar, Car, Upload, FileText, AlertTriangle, CheckCircle, Clock, X } from 'lucide-react';
+import { Shield, Search, Calendar, Car, Upload, FileText, AlertTriangle, CheckCircle, Clock, X, Trash2 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
@@ -102,6 +102,26 @@ const Insurance = () => {
         } catch (error) {
             console.error('Upload error:', error);
             alert('Failed to upload document');
+        }
+    };
+
+    const handleDelete = async (car) => {
+        if (!window.confirm(`Are you sure you want to remove insurance details for ${car.make} ${car.model}? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            const carId = car.id || car._id;
+            await carsApi.update(carId, {
+                insurance_provider: '',
+                insurance_policy_number: '',
+                insurance_expiry_date: null,
+                insurance_document_url: ''
+            });
+            fetchCars();
+        } catch (error) {
+            console.error('Error deleting insurance:', error);
+            alert('Failed to delete insurance details');
         }
     };
 
@@ -309,6 +329,17 @@ const Insurance = () => {
                                                                 <FileText size={14} />
                                                             </Button>
                                                         </a>
+                                                    )}
+                                                    {(car.insurance_provider || car.insurance_policy_number || car.insurance_expiry_date) && (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                            onClick={() => handleDelete(car)}
+                                                            title="Delete Insurance Details"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </Button>
                                                     )}
                                                 </div>
                                             </td>

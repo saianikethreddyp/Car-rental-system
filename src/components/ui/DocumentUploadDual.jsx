@@ -114,7 +114,14 @@ const SingleSideUpload = ({
             ctx.drawImage(video, 0, 0);
             canvas.toBlob(async (blob) => {
                 if (blob) {
-                    await uploadToServer(blob);
+                    // Name the file to avoid "blocked" network requests for generic "_blob" URLs
+                    const file = new File([blob], "camera_capture.jpg", { type: "image/jpeg" });
+
+                    // Create immediate preview
+                    const objectUrl = URL.createObjectURL(file);
+                    setPreview(objectUrl);
+
+                    await uploadToServer(file, objectUrl);
                 }
             }, 'image/jpeg', 0.8);
             stopCamera();
@@ -125,23 +132,39 @@ const SingleSideUpload = ({
     const handleFileSelect = async (e) => {
         const file = e.target.files?.[0];
         if (file) {
-            await uploadToServer(file);
+            // Create immediate preview
+            const objectUrl = URL.createObjectURL(file);
+            setPreview(objectUrl);
+
+            // Upload
+            await uploadToServer(file, objectUrl);
         }
     };
 
     // Upload to Server
-    const uploadToServer = async (fileOrBlob) => {
+    const uploadToServer = async (fileOrBlob, temporaryPreviewUrl) => {
         try {
             setUploading(true);
 
             const response = await uploadApi.uploadFile(fileOrBlob);
-            const publicUrl = response.url; // Corrected access
+            const publicUrl = response.url;
+
+            // Clean up temporary preview if it was a blob URL
+            if (temporaryPreviewUrl && temporaryPreviewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(temporaryPreviewUrl);
+            }
 
             setPreview(publicUrl);
             onUpload(publicUrl);
         } catch (error) {
             console.error('Upload error:', error);
             alert('Failed to upload document: ' + (error.response?.data?.error || error.message));
+
+            // Revert preview on error
+            if (temporaryPreviewUrl && temporaryPreviewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(temporaryPreviewUrl);
+            }
+            setPreview(existingUrl); // Go back to existing or null
         } finally {
             setUploading(false);
         }
@@ -162,12 +185,26 @@ const SingleSideUpload = ({
             {/* Preview Mode */}
             {preview && !cameraActive && (
                 <div className="relative rounded-lg overflow-hidden border border-border bg-muted aspect-[4/3]">
+                    import {getImageUrl} from '../../utils/image';
+
+                    /* ... imports ... */
+
+                    /* ... */
                     <img
-                        src={preview}
+                        src={getImageUrl(preview)}
                         alt={`${docType} ${side}`}
                         className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                        <button
+                            type="button"
+                            onClick={() => window.open(getImageUrl(preview), '_blank')}
+                            /* ... */
+                            className="p-1.5 bg-white/90 rounded-md text-gray-700 hover:bg-white text-xs"
+                            title="Open Image"
+                        >
+                            <ImageIcon size={12} />
+                        </button>
                         <button
                             type="button"
                             onClick={() => {

@@ -3,6 +3,7 @@ import { formatDate } from '../../utils/date';
 import Modal from '../ui/Modal';
 import Badge from '../ui/Badge';
 import { Phone, MapPin, Calendar, Clock, CreditCard, IdCard, Car, ExternalLink } from 'lucide-react';
+import { getImageUrl } from '../../utils/image';
 
 /**
  * DocumentCard - Displays identity document with front/back previews
@@ -24,11 +25,11 @@ const DocumentCard = ({ title, number, frontUrl, backUrl, icon: IconComponent, o
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Front</span>
                 {frontUrl ? (
                     <div
-                        onClick={() => onView(frontUrl)}
+                        onClick={() => onView(getImageUrl(frontUrl))}
                         className="block relative group mt-1 cursor-pointer"
                     >
                         <img
-                            src={frontUrl}
+                            src={getImageUrl(frontUrl)}
                             alt={`${title} Front`}
                             className="w-full h-20 object-cover rounded-md border border-border"
                         />
@@ -49,11 +50,11 @@ const DocumentCard = ({ title, number, frontUrl, backUrl, icon: IconComponent, o
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Back</span>
                 {backUrl ? (
                     <div
-                        onClick={() => onView(backUrl)}
+                        onClick={() => onView(getImageUrl(backUrl))}
                         className="block relative group mt-1 cursor-pointer"
                     >
                         <img
-                            src={backUrl}
+                            src={getImageUrl(backUrl)}
                             alt={`${title} Back`}
                             className="w-full h-20 object-cover rounded-md border border-border"
                         />
@@ -76,10 +77,12 @@ const DocumentCard = ({ title, number, frontUrl, backUrl, icon: IconComponent, o
 /**
  * RentalDetailsModal - Shows full rental details including customer documents
  */
-const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
+const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency, onStatusUpdate }) => {
     const [previewImage, setPreviewImage] = React.useState(null);
 
     if (!rental) return null;
+
+
 
     const formatTime = (time) => {
         if (!time) return '--:--';
@@ -95,8 +98,6 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
             default: return 'secondary';
         }
     };
-
-
 
     return (
         <Modal
@@ -126,9 +127,25 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
                             </div>
                         )}
                     </div>
-                    <Badge variant={getStatusVariant(rental.status)} size="lg">
-                        {rental.status?.charAt(0).toUpperCase() + rental.status?.slice(1)}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-2">
+                        <Badge variant={getStatusVariant(rental.status)} size="lg">
+                            {rental.status?.charAt(0).toUpperCase() + rental.status?.slice(1)}
+                        </Badge>
+
+                        {(rental.status === 'active' || rental.status === 'pending') && (
+                            <button
+                                onClick={() => {
+                                    if (window.confirm('Are you sure you want to CANCEL this booking?')) {
+                                        onStatusUpdate(rental._id || rental.id, rental.car_id?._id || rental.car_id, 'cancelled');
+                                        onClose();
+                                    }
+                                }}
+                                className="text-xs text-red-600 hover:text-red-800 underline font-medium"
+                            >
+                                Cancel Booking
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Vehicle & Trip Info */}
@@ -295,11 +312,11 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency }) => {
                             {rental.car_photos.map((url, index) => (
                                 <div
                                     key={index}
-                                    onClick={() => setPreviewImage(url)}
+                                    onClick={() => setPreviewImage(getImageUrl(url))}
                                     className="relative group aspect-square rounded-lg overflow-hidden border border-border cursor-pointer"
                                 >
                                     <img
-                                        src={url}
+                                        src={getImageUrl(url)}
                                         alt={`Car photo ${index + 1}`}
                                         className="w-full h-full object-cover"
                                     />

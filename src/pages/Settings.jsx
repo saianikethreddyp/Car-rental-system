@@ -58,8 +58,7 @@ const Settings = () => {
     const [invoiceSettings, setInvoiceSettings] = useState({
         invoicePrefix: settings.invoice?.prefix || 'INV-',
         paymentTerms: settings.invoice?.paymentTerms || 'Due on delivery',
-        footerNotes: settings.invoice?.footerNotes || 'Thank you for your business!',
-        showTaxBreakdown: settings.invoice?.showTaxBreakdown ?? true
+        footerNotes: settings.invoice?.footerNotes || 'Thank you for your business!'
     });
 
     useEffect(() => {
@@ -372,17 +371,7 @@ const Settings = () => {
                                         placeholder="Thank you for your business!"
                                     />
                                 </div>
-                                <div className="md:col-span-2">
-                                    <label className="flex items-center gap-3 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={invoiceSettings.showTaxBreakdown}
-                                            onChange={(e) => setInvoiceSettings({ ...invoiceSettings, showTaxBreakdown: e.target.checked })}
-                                            className="w-4 h-4 rounded border-border"
-                                        />
-                                        <span className="text-sm font-medium">Show tax breakdown on invoices</span>
-                                    </label>
-                                </div>
+
                             </div>
                             <div className="flex justify-end mt-4">
                                 <Button onClick={handleSaveInvoiceSettings}>

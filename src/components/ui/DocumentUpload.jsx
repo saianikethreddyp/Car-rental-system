@@ -63,7 +63,14 @@ const DocumentUpload = ({
 
             canvas.toBlob(async (blob) => {
                 if (blob) {
-                    await uploadToServer(blob);
+                    // Name the file to avoid "blocked" network requests
+                    const file = new File([blob], "camera_capture.jpg", { type: "image/jpeg" });
+
+                    // Create immediate preview
+                    const objectUrl = URL.createObjectURL(file);
+                    setPreview(objectUrl);
+
+                    await uploadToServer(file, objectUrl);
                 }
             }, 'image/jpeg', 0.8);
             stopCamera();
@@ -74,17 +81,27 @@ const DocumentUpload = ({
     const handleFileSelect = async (e) => {
         const file = e.target.files?.[0];
         if (file) {
-            await uploadToServer(file);
+            // Create immediate preview
+            const objectUrl = URL.createObjectURL(file);
+            setPreview(objectUrl);
+
+            // Upload
+            await uploadToServer(file, objectUrl);
         }
     };
 
     // Upload to Server
-    const uploadToServer = async (fileOrBlob) => {
+    const uploadToServer = async (fileOrBlob, temporaryPreviewUrl) => {
         try {
             setUploading(true);
 
             const response = await uploadApi.uploadFile(fileOrBlob);
-            const publicUrl = response.url; // Corrected access
+            const publicUrl = response.url;
+
+            // Clean up temporary preview if it was a blob URL
+            if (temporaryPreviewUrl && temporaryPreviewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(temporaryPreviewUrl);
+            }
 
             setPreview(publicUrl);
             onUpload(publicUrl);
@@ -92,6 +109,12 @@ const DocumentUpload = ({
         } catch (error) {
             console.error('Upload error:', error);
             alert('Failed to upload document: ' + (error.response?.data?.error || error.message));
+
+            // Revert preview on error
+            if (temporaryPreviewUrl && temporaryPreviewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(temporaryPreviewUrl);
+            }
+            setPreview(existingUrl);
         } finally {
             setUploading(false);
         }

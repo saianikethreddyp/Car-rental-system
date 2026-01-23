@@ -147,9 +147,16 @@ const Rentals = () => {
         setSubmitting(true);
 
         try {
-            // Create rental directly with status='active'
-            // Backend will automatically set car to 'rented'
-            await rentalsApi.create({ ...formData, status: 'active' });
+            // Determine status based on Start Date
+            // If Start Date is TODAY -> Active
+            // If Start Date is FUTURE -> Pending
+            const todayStr = new Date().toISOString().split('T')[0];
+            const startDateStr = formData.start_date; // YYYY-MM-DD
+
+            // Allow string comparison for ISO dates
+            const status = startDateStr > todayStr ? 'pending' : 'active';
+
+            await rentalsApi.create({ ...formData, status });
 
             // Reset form
             setIsModalOpen(false);
@@ -187,7 +194,8 @@ const Rentals = () => {
             fetchRentals();
             fetchAvailableCars();
         } catch (error) {
-            alert(error.message);
+            const errorMessage = error.response?.data?.error || error.message || 'Failed to create booking';
+            alert(errorMessage);
         } finally {
             setSubmitting(false);
         }
@@ -816,6 +824,7 @@ const Rentals = () => {
                 }}
                 rental={selectedRentalForDetails}
                 formatCurrency={formatCurrency}
+                onStatusUpdate={handleStatusUpdate}
             />
 
             {/* Add Charge Modal */}

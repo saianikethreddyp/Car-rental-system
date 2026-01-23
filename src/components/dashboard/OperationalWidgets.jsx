@@ -43,8 +43,8 @@ export const FleetCalendar = ({ selectedDate }) => {
         }
     };
 
-    // Generate 7 days starting from selectedDate
-    const days = [...Array(7)].map((_, i) => {
+    // Generate 14 days starting from selectedDate
+    const days = [...Array(14)].map((_, i) => {
         const d = new Date(selectedDate);
         d.setDate(d.getDate() + i);
         return {
