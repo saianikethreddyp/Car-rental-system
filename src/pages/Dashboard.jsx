@@ -44,8 +44,6 @@ const Dashboard = () => {
     useEffect(() => {
         fetchDashboardData(selectedDate);
 
-        // Real-time subscription removed (Migrated from Supabase)
-        // Real-time subscription removed (Migrated from Supabase)
     }, [selectedDate]);
 
     const fetchDashboardData = async (dateStr) => {

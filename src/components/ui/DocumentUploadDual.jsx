@@ -3,6 +3,7 @@ import { uploadApi } from '../../api/client';
 import { Camera, Upload, X, Check, RefreshCw, ImageIcon } from 'lucide-react';
 import Button from './Button';
 import Input from './Input';
+import { getImageUrl } from '../../utils/image';
 
 /**
  * DocumentUploadDual - Component for capturing front and back images of identity documents
@@ -185,11 +186,6 @@ const SingleSideUpload = ({
             {/* Preview Mode */}
             {preview && !cameraActive && (
                 <div className="relative rounded-lg overflow-hidden border border-border bg-muted aspect-[4/3]">
-                    import {getImageUrl} from '../../utils/image';
-
-                    /* ... imports ... */
-
-                    /* ... */
                     <img
                         src={getImageUrl(preview)}
                         alt={`${docType} ${side}`}
