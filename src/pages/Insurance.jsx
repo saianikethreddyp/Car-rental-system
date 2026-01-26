@@ -32,11 +32,18 @@ const Insurance = () => {
     const fetchCars = async () => {
         try {
             setLoading(true);
-            const data = await carsApi.getAll(); // API returns array directly
-            setCars(data || []);
+            // Request large limit to ensure stats are accurate for the fleet (temporary fix until server-side analytics)
+            const response = await carsApi.getAll({ limit: 1000 });
+
+            if (response && response.cars) {
+                setCars(response.cars);
+            } else if (Array.isArray(response)) {
+                setCars(response);
+            } else {
+                setCars([]);
+            }
         } catch (error) {
             console.error('Error fetching cars:', error);
-            // alert('Failed to fetch cars. Please try refreshing.'); // Optional
         } finally {
             setLoading(false);
         }

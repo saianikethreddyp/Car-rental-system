@@ -38,7 +38,6 @@ const Dashboard = () => {
         lastMonthRevenue: 0
     });
     const [recentRentals, setRecentRentals] = useState([]);
-    const [chartData, setChartData] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -57,7 +56,7 @@ const Dashboard = () => {
             ]);
 
             setStats(statsData.stats);
-            setChartData(statsData.chartData);
+            // setChartData(statsData.chartData); // Removed unused chart
             setRecentRentals(activityData);
 
         } catch (error) {

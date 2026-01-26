@@ -21,7 +21,7 @@ const InvoiceTemplate = ({ rental, invoiceNumber }) => {
     // Logic update: User requests no tax breakdown and clear listing of extra charges
 
     // 1. Base Rental Cost
-    const dailyRate = Number(rental.car_id?.daily_rate) || 0; // Use populated car rate if stored rate not available, but ideally rental should store its own rate snapshot.
+    // 1. Base Rental Cost
     // However, looking at previous code, it derived baseAmount from total.
     // Let's assume rental.total_amount IS the final amount.
     // But we need to reconstruct the breakdown.
@@ -39,18 +39,8 @@ const InvoiceTemplate = ({ rental, invoiceNumber }) => {
     const charges = rental.charges || [];
     const chargesTotal = charges.reduce((sum, charge) => sum + (Number(charge.amount) || 0), 0);
 
-    // We try to derive rental cost from remaining amount if total_amount is fixed
-    // OR we use the car's daily rate if available.
-    // Given the previous code just took total_amount, let's try to respect the total_amount source of truth.
-
+    // We use total_amount as the source of truth
     const finalTotal = Number(rental.total_amount) || 0;
-
-    // If we have charges, the base rental cost is roughly (Total - Charges)
-    // But sometimes Total is manually set.
-
-    // Let's calculate what the rental *should* be based on rate
-    const carRate = Number(rental.cars?.daily_rate) || 0;
-    const calculatedRentalCost = carRate * rentalDays;
 
     // If (calculated + charges) != total, we might have a discount or manual adjustment.
     // But for the invoice to "look right", let's list the known items.
@@ -65,15 +55,38 @@ const InvoiceTemplate = ({ rental, invoiceNumber }) => {
             {/* Header */}
             <div className="flex justify-between items-start mb-8 pb-6 border-b-2 border-gray-200">
                 <div>
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="h-10 w-10 rounded-lg bg-zinc-900 flex items-center justify-center">
-                            <span className="text-white font-bold text-lg">D</span>
+                    <div className="flex items-center gap-3 mb-4">
+                        {settings.business?.logo ? (
+                            <img
+                                src={settings.business.logo}
+                                alt="Logo"
+                                className="h-16 w-auto object-contain"
+                            />
+                        ) : (
+                            <div className="h-12 w-12 rounded-lg bg-zinc-900 flex items-center justify-center">
+                                <span className="text-white font-bold text-xl">
+                                    {settings.business?.companyName?.charAt(0) || 'D'}
+                                </span>
+                            </div>
+                        )}
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">
+                                {settings.business?.companyName || 'Dhanya CRM'}
+                            </h1>
+                            <p className="text-sm text-gray-500">Car Rental Services</p>
                         </div>
-                        <h1 className="text-2xl font-bold text-gray-900">Dhanya CRM</h1>
                     </div>
-                    <p className="text-sm text-gray-500">Car Rental Services</p>
-                    <p className="text-sm text-gray-500">Hyderabad, Telangana, India</p>
-                    <p className="text-sm text-gray-500">contact@dhanyacrm.com</p>
+                    <div className="space-y-1 text-sm text-gray-500">
+                        {settings.business?.address && (
+                            <p className="whitespace-pre-line">{settings.business.address}</p>
+                        )}
+                        {settings.business?.phone && (
+                            <p>Phone: {settings.business.phone}</p>
+                        )}
+                        {settings.business?.email && (
+                            <p>Email: {settings.business.email}</p>
+                        )}
+                    </div>
                 </div>
                 <div className="text-right">
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">INVOICE</h2>
@@ -103,7 +116,7 @@ const InvoiceTemplate = ({ rental, invoiceNumber }) => {
             <div className="mb-8">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Rental Details</h3>
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                         <div>
                             <p className="text-xs text-gray-500 uppercase">Vehicle</p>
                             <p className="font-semibold text-gray-900">
@@ -115,6 +128,12 @@ const InvoiceTemplate = ({ rental, invoiceNumber }) => {
                             <p className="text-xs text-gray-500 uppercase">Rental Period</p>
                             <p className="font-semibold text-gray-900">{startDate} - {endDate}</p>
                             <p className="text-sm text-gray-500">{rentalDays} day(s)</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 uppercase">Payment Method</p>
+                            <p className="font-semibold text-gray-900 uppercase">
+                                {rental.payment_method || 'PENDING'}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -194,11 +213,44 @@ const InvoiceTemplate = ({ rental, invoiceNumber }) => {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-gray-200 pt-6 text-center">
-                <p className="text-sm text-gray-500 mb-2">Thank you for choosing Dhanya CRM!</p>
-                <p className="text-xs text-gray-400">
-                    For questions about this invoice, please contact us at contact@dhanyacrm.com
-                </p>
+            <div className="border-t border-gray-200 pt-8 mt-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    {/* Terms & Conditions */}
+                    {settings.business?.terms && (
+                        <div>
+                            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Terms & Conditions</h4>
+                            <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">
+                                {settings.business.terms}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Signature */}
+                    {settings.invoice?.signature && (
+                        <div className="flex flex-col items-end justify-end">
+                            <img
+                                src={settings.invoice.signature}
+                                alt="Authorized Signatory"
+                                className="h-16 object-contain mb-2"
+                            />
+                            <div className="border-t border-gray-300 w-48 pt-2 text-center">
+                                <p className="text-xs font-semibold text-gray-900 uppercase">Authorized Signatory</p>
+                                <p className="text-xs text-gray-500">{settings.business?.companyName}</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="text-center pt-6 border-t border-gray-100">
+                    <p className="text-sm text-gray-500 mb-1">
+                        {settings.invoice?.footerNotes || 'Thank you for your business!'}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                        {settings.business?.email && `Contact: ${settings.business.email}`}
+                        {settings.business?.email && settings.business?.phone && ' | '}
+                        {settings.business?.phone && `Phone: ${settings.business.phone}`}
+                    </p>
+                </div>
             </div>
         </div>
     );

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { dashboardApi, carsApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
-import { useSettings } from '../../context/SettingsContext';
 import {
     Calendar,
     Clock,

@@ -21,20 +21,38 @@ const Customers = () => {
 
     const formatCurrency = settingsContext?.formatCurrency || defaultFormatter;
     const [customers, setCustomers] = useState([]);
+    const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
     useEffect(() => {
-        fetchCustomers();
-    }, [searchQuery]); // Re-fetch when search changes
+        // Debounce search
+        const timeoutId = setTimeout(() => {
+            fetchCustomers(1);
+        }, 500);
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
 
-    const fetchCustomers = async () => {
+    const fetchCustomers = async (page = 1) => {
         try {
             setLoading(true);
-            const data = await customersApi.getAll(searchQuery);
-            setCustomers(data);
+            const response = await customersApi.getAll({
+                page,
+                limit: 10,
+                search: searchQuery
+            });
+
+            if (response && response.customers) {
+                setCustomers(response.customers);
+                setPagination(response.pagination);
+            } else if (Array.isArray(response)) {
+                setCustomers(response);
+                setPagination({ page: 1, limit: response.length, total: response.length, pages: 1 });
+            } else {
+                setCustomers([]);
+            }
         } catch (error) {
             console.error('Error fetching customers:', error);
         } finally {
@@ -42,7 +60,7 @@ const Customers = () => {
         }
     };
 
-    // No need for frontend filtering anymore as backend handles it
+    // Backend filtering
     const filteredCustomers = customers;
 
     return (
@@ -159,6 +177,36 @@ const Customers = () => {
                     </table>
                 </div>
             </Card>
+
+            {/* Pagination Controls */}
+            {!loading && customers.length > 0 && (
+                <div className="flex items-center justify-between bg-card p-4 rounded-lg border border-border shadow-sm">
+                    <p className="text-sm text-muted-foreground">
+                        Showing <span className="font-medium">{customers.length}</span> of <span className="font-medium">{pagination.total}</span> customers
+                    </p>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchCustomers(pagination.page - 1)}
+                            disabled={pagination.page <= 1}
+                        >
+                            Previous
+                        </Button>
+                        <span className="flex items-center px-2 text-sm font-medium">
+                            Page {pagination.page} of {pagination.pages}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchCustomers(pagination.page + 1)}
+                            disabled={pagination.page >= pagination.pages}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Customer Details Modal */}
             <CustomerDetailsModal

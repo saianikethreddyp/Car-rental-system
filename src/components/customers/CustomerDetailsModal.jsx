@@ -23,10 +23,7 @@ const CustomerDetailsModal = ({ isOpen, onClose, customer, formatCurrency, onVie
         try {
             setLoading(true);
             const response = await rentalsApi.getAll({ customer_phone: customer.phone });
-            // API returns response.data which is the array of rentals (intercepted in client.js)
-            // But wait, client.js interceptor returns response.data.
-            // If the backend returns `res.json(rentals)`, then `response` here IS the rentals array.
-            setRentals(response || []);
+            setRentals(response.rentals || (Array.isArray(response) ? response : []));
         } catch (error) {
             console.error('Error fetching rentals:', error);
         } finally {

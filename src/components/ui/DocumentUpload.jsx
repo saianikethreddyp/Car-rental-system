@@ -8,10 +8,10 @@ import Button from './Button';
  * Supports file upload and camera capture
  */
 const DocumentUpload = ({
-    label,
-    docType, // 'pan' | 'aadhar' | 'license'
-    onUpload, // callback with uploaded URL
-    existingUrl = null
+    label = "Upload Document",
+    onUpload,
+    existingUrl = null,
+    accept = "image/*,.pdf"
 }) => {
     const [preview, setPreview] = useState(existingUrl);
     const [uploading, setUploading] = useState(false);
@@ -221,7 +221,7 @@ const DocumentUpload = ({
                         <input
                             ref={fileInputRef}
                             type="file"
-                            accept="image/*"
+                            accept={accept}
                             capture="environment"
                             onChange={handleFileSelect}
                             className="hidden"

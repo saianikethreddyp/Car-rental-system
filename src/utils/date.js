@@ -14,6 +14,6 @@ export const formatDate = (dateString, includeTime = false) => {
         ? `${day}/${month}/${year} ${date.toLocaleTimeString()}`
         : `${day}/${month}/${year}`
 
-    console.log('formatDate:', dateString, '->', formatted)
+    // console.log('formatDate:', dateString, '->', formatted);
     return formatted
 }

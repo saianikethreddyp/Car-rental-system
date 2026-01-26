@@ -12,9 +12,10 @@ import { useAuth } from '../context/AuthProvider';
 import { useSettings } from '../context/SettingsContext';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { rentalsApi, customersApi, carsApi } from '../api/client';
+import { rentalsApi, customersApi, carsApi, uploadApi, sessionsApi } from '../api/client';
 import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
+import { Camera, Image as ImageIcon, X, Smartphone, Monitor, Trash2, LogOut } from 'lucide-react';
 
 const Settings = () => {
     const { user } = useAuth();
@@ -25,6 +26,8 @@ const Settings = () => {
     const [passwordLoading, setPasswordLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('general');
     const [exportLoading, setExportLoading] = useState(null);
+    const [sessions, setSessions] = useState([]);
+    const [sessionsLoading, setSessionsLoading] = useState(false);
 
     // Profile State
     const [profile, setProfile] = useState({
@@ -43,22 +46,20 @@ const Settings = () => {
         companyName: settings.business?.companyName || 'Dhanya CRM',
         address: settings.business?.address || '',
         phone: settings.business?.phone || '',
-        email: settings.business?.email || ''
+        email: settings.business?.email || '',
+        logo: settings.business?.logo || null,
+        terms: settings.business?.terms || ''
     });
 
-    // Rental Defaults State
-    const [rentalDefaults, setRentalDefaults] = useState({
-        defaultDailyRate: settings.rentalDefaults?.defaultDailyRate || 2000,
-        securityDeposit: settings.rentalDefaults?.securityDeposit || 5000,
-        lateFeePercent: settings.rentalDefaults?.lateFeePercent || 10,
-        minRentalDays: settings.rentalDefaults?.minRentalDays || 1
-    });
+    // Rental Defaults State (Currently unused in UI)
+    // const [rentalDefaults, setRentalDefaults] = useState({ ... });
 
     // Invoice Settings State
     const [invoiceSettings, setInvoiceSettings] = useState({
         invoicePrefix: settings.invoice?.prefix || 'INV-',
         paymentTerms: settings.invoice?.paymentTerms || 'Due on delivery',
-        footerNotes: settings.invoice?.footerNotes || 'Thank you for your business!'
+        footerNotes: settings.invoice?.footerNotes || 'Thank you for your business!',
+        signature: settings.invoice?.signature || null
     });
 
     useEffect(() => {
@@ -69,6 +70,25 @@ const Settings = () => {
             });
         }
     }, [user]);
+
+    // Fetch active sessions when Security tab is opened
+    const fetchSessions = async () => {
+        setSessionsLoading(true);
+        try {
+            const data = await sessionsApi.getAll();
+            setSessions(data);
+        } catch (error) {
+            console.error('Failed to fetch sessions:', error);
+        } finally {
+            setSessionsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'security') {
+            fetchSessions();
+        }
+    }, [activeTab]);
 
     // Tabs configuration
     const tabs = [
@@ -123,16 +143,33 @@ const Settings = () => {
         toast.success('Business profile saved!');
     };
 
-    // Save Rental Defaults
-    const handleSaveRentalDefaults = () => {
-        updateSettings({ rentalDefaults });
-        toast.success('Rental defaults saved!');
-    };
+    // const handleSaveRentalDefaults = ...
 
     // Save Invoice Settings
     const handleSaveInvoiceSettings = () => {
         updateSettings({ invoice: invoiceSettings });
         toast.success('Invoice settings saved!');
+    };
+
+    // File Upload Handler
+    const handleFileUpload = async (file, type) => {
+        if (!file) return;
+
+        const toastId = toast.loading('Uploading...');
+        try {
+            const response = await uploadApi.uploadFile(file);
+            const url = response.url;
+
+            if (type === 'logo') {
+                setBusinessProfile(prev => ({ ...prev, logo: url }));
+            } else if (type === 'signature') {
+                setInvoiceSettings(prev => ({ ...prev, signature: url }));
+            }
+            toast.success('Upload successful', { id: toastId });
+        } catch (error) {
+            console.error(error);
+            toast.error('Upload failed', { id: toastId });
+        }
     };
 
     // Export Data Functions
@@ -144,10 +181,11 @@ const Settings = () => {
             let headers = [];
 
             if (type === 'rentals') {
-                const rentalsData = await rentalsApi.getAll();
-                const rentals = rentalsData.rentals || rentalsData;
+                // Request all for export
+                const response = await rentalsApi.getAll({ limit: 10000 });
+                const rentals = response.rentals || (Array.isArray(response) ? response : []);
 
-                data = rentals?.map(r => ({
+                data = rentals.map(r => ({
                     'Customer Name': r.customer_name,
                     'Phone': r.customer_phone,
                     'Car': r.cars ? `${r.cars?.make} ${r.cars?.model}` : 'N/A',
@@ -157,28 +195,30 @@ const Settings = () => {
                     'Total Amount': r.total_amount,
                     'Status': r.status,
                     'Created At': r.created_at
-                })) || [];
+                }));
                 filename = 'rentals_export.csv';
             } else if (type === 'customers') {
-                const customers = await customersApi.getAll();
+                const response = await customersApi.getAll({ limit: 10000 });
+                const customers = response.customers || (Array.isArray(response) ? response : []);
 
-                data = customers?.map(c => ({
+                data = customers.map(c => ({
                     'Name': c.name,
                     'Phone': c.phone,
                     'Created At': c.created_at
-                })) || [];
+                }));
                 filename = 'customers_export.csv';
             } else if (type === 'cars') {
-                const cars = await carsApi.getAll();
+                const response = await carsApi.getAll({ limit: 10000 });
+                const cars = response.cars || (Array.isArray(response) ? response : []);
 
-                data = cars?.map(c => ({
+                data = cars.map(c => ({
                     'Make': c.make,
                     'Model': c.model,
                     'License Plate': c.license_plate,
                     'Daily Rate': c.daily_rate,
                     'Status': c.status,
                     'Insurance Expiry': c.insurance_expiry_date || 'Not Set'
-                })) || [];
+                }));
                 filename = 'cars_export.csv';
             }
 
@@ -209,11 +249,7 @@ const Settings = () => {
         }
     };
 
-    const currencyOptions = [
-        { value: 'INR', label: 'INR', symbol: '₹' },
-        { value: 'USD', label: 'USD', symbol: '$' },
-        { value: 'EUR', label: 'EUR', symbol: '€' }
-    ];
+
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto pb-12">
@@ -304,6 +340,41 @@ const Settings = () => {
                         </div>
 
                         <Card className="p-6">
+                            {/* Logo Upload */}
+                            <div className="mb-6 flex flex-col items-center sm:items-start">
+                                <span className="text-sm font-medium text-gray-700 mb-2">Company Logo</span>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden relative group">
+                                        {businessProfile.logo ? (
+                                            <>
+                                                <img src={businessProfile.logo} alt="Logo" className="w-full h-full object-contain" />
+                                                <button
+                                                    onClick={() => setBusinessProfile({ ...businessProfile, logo: null })}
+                                                    className="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center text-white"
+                                                >
+                                                    <X size={20} />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <ImageIcon className="text-gray-400" size={32} />
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        <label className="cursor-pointer px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+                                            <Camera size={16} />
+                                            Upload Logo
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={(e) => handleFileUpload(e.target.files[0], 'logo')}
+                                            />
+                                        </label>
+                                        <p className="text-xs text-gray-500">Recommended: Square PNG/JPG, max 2MB</p>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Input
                                     label="Company Name"
@@ -315,7 +386,8 @@ const Settings = () => {
                                     label="Business Phone"
                                     value={businessProfile.phone}
                                     onChange={(e) => setBusinessProfile({ ...businessProfile, phone: e.target.value })}
-                                    placeholder="+91 9876543210"
+                                    placeholder="+91 9876543210, +91 9876543211"
+                                    helperText="Separate multiple numbers with commas"
                                 />
                                 <Input
                                     label="Business Email"
@@ -330,6 +402,15 @@ const Settings = () => {
                                     onChange={(e) => setBusinessProfile({ ...businessProfile, address: e.target.value })}
                                     placeholder="123 Main Street, City"
                                 />
+                                <div className="md:col-span-2 space-y-2">
+                                    <label className="text-sm font-medium">Terms & Conditions</label>
+                                    <textarea
+                                        value={businessProfile.terms}
+                                        onChange={(e) => setBusinessProfile({ ...businessProfile, terms: e.target.value })}
+                                        className="w-full h-32 rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                        placeholder="Enter your standard terms and conditions here..."
+                                    />
+                                </div>
                             </div>
                             <div className="flex justify-end mt-4">
                                 <Button onClick={handleSaveBusinessProfile}>
@@ -367,9 +448,40 @@ const Settings = () => {
                                     <textarea
                                         value={invoiceSettings.footerNotes}
                                         onChange={(e) => setInvoiceSettings({ ...invoiceSettings, footerNotes: e.target.value })}
-                                        className="w-full h-20 rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none"
+                                        className="w-full h-20 rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                                         placeholder="Thank you for your business!"
                                     />
+                                </div>
+
+                                {/* Signature Upload */}
+                                <div className="md:col-span-2 space-y-2 pt-4 border-t border-gray-100">
+                                    <span className="text-sm font-medium text-gray-700">Authorized Signatory</span>
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-16 w-32 border border-gray-200 rounded-md flex items-center justify-center bg-white overflow-hidden relative group">
+                                            {invoiceSettings.signature ? (
+                                                <>
+                                                    <img src={invoiceSettings.signature} alt="Signature" className="w-full h-full object-contain" />
+                                                    <button
+                                                        onClick={() => setInvoiceSettings({ ...invoiceSettings, signature: null })}
+                                                        className="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center text-white"
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <span className="text-xs text-gray-400 italic">No Signature</span>
+                                            )}
+                                        </div>
+                                        <label className="cursor-pointer px-3 py-1.5 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50 transition-colors">
+                                            Upload Signature
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={(e) => handleFileUpload(e.target.files[0], 'signature')}
+                                            />
+                                        </label>
+                                    </div>
                                 </div>
 
                             </div>
@@ -477,6 +589,83 @@ const Settings = () => {
                                     <Lock size={16} className="mr-2" /> Update Password
                                 </Button>
                             </div>
+                        </Card>
+
+                        {/* Active Sessions Section */}
+                        <div className="flex items-center gap-2 mb-4 mt-8">
+                            <div className="p-2 rounded-lg bg-blue-500/10">
+                                <Smartphone className="text-blue-500" size={20} />
+                            </div>
+                            <h2 className="text-xl font-semibold text-foreground">Active Sessions</h2>
+                        </div>
+
+                        <Card className="p-6">
+                            <div className="flex justify-between items-center mb-4">
+                                <p className="text-muted-foreground text-sm">Devices currently logged into your account.</p>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={async () => {
+                                        try {
+                                            await sessionsApi.revokeAll();
+                                            toast.success('All other sessions logged out');
+                                            fetchSessions();
+                                        } catch {
+                                            toast.error('Failed to logout sessions');
+                                        }
+                                    }}
+                                    className="text-red-500 border-red-500/30 hover:bg-red-500/10"
+                                >
+                                    <LogOut size={14} className="mr-1" /> Logout All
+                                </Button>
+                            </div>
+
+                            {sessionsLoading ? (
+                                <div className="text-center py-8 text-muted-foreground">Loading sessions...</div>
+                            ) : sessions.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">No active sessions found</div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {sessions.map((session) => (
+                                        <div
+                                            key={session._id}
+                                            className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/20"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 rounded-lg bg-primary/10">
+                                                    {session.device_info?.includes('Mobile') ? (
+                                                        <Smartphone size={18} className="text-primary" />
+                                                    ) : (
+                                                        <Monitor size={18} className="text-primary" />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-foreground">{session.device_info}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        IP: {session.ip_address} • Last active: {new Date(session.last_active).toLocaleString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={async () => {
+                                                    try {
+                                                        await sessionsApi.revoke(session._id);
+                                                        toast.success('Session logged out');
+                                                        fetchSessions();
+                                                    } catch {
+                                                        toast.error('Failed to logout session');
+                                                    }
+                                                }}
+                                                className="text-red-500 hover:bg-red-500/10"
+                                            >
+                                                <Trash2 size={16} />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </Card>
                     </section>
                 )

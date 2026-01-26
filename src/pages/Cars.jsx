@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { carsApi, rentalsApi } from '../api/client';
 import { Plus, Search, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -11,6 +11,7 @@ import { useSettings } from '../context/SettingsContext';
 
 const Cars = () => {
     const [cars, setCars] = useState([]);
+    const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, pages: 1 });
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingCar, setEditingCar] = useState(null);
@@ -33,22 +34,42 @@ const Cars = () => {
         loading: false
     });
 
-    useEffect(() => {
-        fetchCars();
-    }, []);
-
-    const fetchCars = async () => {
+    // Memoized fetch function to prevent unnecessary re-renders lint issues
+    const fetchCars = useCallback(async (page = 1) => {
         try {
             setLoading(true);
-            const data = await carsApi.getAll();
-            setCars(data || []);
+            const response = await carsApi.getAll({
+                page,
+                limit: 12, // Grid view
+                search: searchQuery
+            });
+
+            if (response && response.cars) {
+                setCars(response.cars);
+                setPagination(response.pagination);
+            } else if (Array.isArray(response)) {
+                setCars(response);
+                setPagination({ page: 1, limit: response.length, total: response.length, pages: 1 });
+            } else {
+                setCars([]);
+            }
         } catch (error) {
             console.error('Error fetching cars:', error.message);
             toast.error('Failed to load cars');
         } finally {
             setLoading(false);
         }
-    };
+    }, [searchQuery]);
+
+    // Initial load and Debounced Search
+    // Since fetchCars depends on searchQuery, it changes updates whenever query updates.
+    // This effect handles both initial load (searchQuery='') and updates.
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            fetchCars(1);
+        }, 500); // 500ms debounce
+        return () => clearTimeout(timeoutId);
+    }, [fetchCars]);
 
     const handleOpenModal = (car = null) => {
         setEditingCar(car);
@@ -98,8 +119,9 @@ const Cars = () => {
         setDeleteModal(prev => ({ ...prev, loading: true }));
         try {
             // Check for rentals (for informational purpose only - shown in modal)
-            const rentals = await rentalsApi.getAll({ car_id: id });
-            const count = rentals?.length || 0;
+            const response = await rentalsApi.getAll({ car_id: id });
+            const rentals = response.rentals || (Array.isArray(response) ? response : []);
+            const count = rentals.length;
 
             setDeleteModal({
                 show: true,
@@ -137,11 +159,8 @@ const Cars = () => {
         }
     };
 
-    const filteredCars = cars.filter(car =>
-        car.make.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        car.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        car.license_plate.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Data filtered on backend
+    const filteredCars = cars;
 
     return (
         <div className="space-y-6">
@@ -197,6 +216,36 @@ const Cars = () => {
                 </div>
             )}
 
+            {/* Pagination Controls */}
+            {!loading && cars.length > 0 && (
+                <div className="flex items-center justify-between bg-card p-4 rounded-lg border border-border shadow-sm">
+                    <p className="text-sm text-muted-foreground">
+                        Showing <span className="font-medium">{cars.length}</span> of <span className="font-medium">{pagination.total}</span> cars
+                    </p>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchCars(pagination.page - 1)}
+                            disabled={pagination.page <= 1}
+                        >
+                            Previous
+                        </Button>
+                        <span className="flex items-center px-2 text-sm font-medium">
+                            Page {pagination.page} of {pagination.pages}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchCars(pagination.page + 1)}
+                            disabled={pagination.page >= pagination.pages}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            )}
+
             {/* Modals */}
             <CarFormModal
                 isOpen={showModal}
@@ -219,7 +268,7 @@ const Cars = () => {
                 car={analyticsModal.car}
                 formatCurrency={formatCurrency}
             />
-        </div>
+        </div >
     );
 };
 

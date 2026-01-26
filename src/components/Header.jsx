@@ -4,7 +4,7 @@ import { Search, Bell, Menu } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthProvider';
 
-const Header = ({ toggleMobileMenu, isMobileMenuOpen }) => {
+const Header = ({ toggleMobileMenu }) => {
     const location = useLocation();
     const { user } = useAuth();
     const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications();

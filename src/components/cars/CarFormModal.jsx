@@ -127,7 +127,7 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
         try {
             // Check uniqueness via Backend API
-            const { available, isDeleted, car } = await carsApi.checkAvailability(plate);
+            const { available, isDeleted } = await carsApi.checkAvailability(plate);
 
             if (!available) {
                 // If editing, allow the same plate for this car
@@ -163,10 +163,11 @@ const CarFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
             // Check for conflict: If setting to available but has active rental
             // Only applicable for existing cars (initialData exists)
             if (initialData && formData.status === 'available' && initialData.status !== 'available') {
-                const activeRentals = await rentalsApi.getAll({
+                const response = await rentalsApi.getAll({
                     car_id: initialData.id || initialData._id,
                     status: 'active'
                 });
+                const activeRentals = response.rentals || (Array.isArray(response) ? response : []);
 
                 if (activeRentals && activeRentals.length > 0) {
                     const rental = activeRentals[0];

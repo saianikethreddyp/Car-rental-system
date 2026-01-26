@@ -2,14 +2,18 @@ import React, { useRef } from 'react';
 import { X, Download, Printer } from 'lucide-react';
 import Button from '../ui/Button';
 import InvoiceTemplate from './InvoiceTemplate';
+import { useSettings } from '../../context/SettingsContext';
 
 const InvoiceModal = ({ isOpen, onClose, rental }) => {
     const invoiceRef = useRef(null);
 
+    const { settings } = useSettings();
+    const prefix = settings?.invoice?.prefix || 'INV-';
+
     if (!isOpen || !rental) return null;
 
     // Generate invoice number from rental id and date
-    const invoiceNumber = `INV-${String(rental.id).slice(0, 8).toUpperCase()}`;
+    const invoiceNumber = `${prefix}${String(rental.id).slice(0, 8).toUpperCase()}`;
 
     const handlePrint = () => {
         const printContent = document.getElementById('invoice-content');

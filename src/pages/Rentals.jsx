@@ -32,6 +32,7 @@ const Rentals = () => {
 
     const formatCurrency = settingsContext?.formatCurrency || defaultFormatter;
     const [rentals, setRentals] = useState([]);
+    const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
     const [cars, setCars] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -80,15 +81,38 @@ const Rentals = () => {
     });
 
     useEffect(() => {
-        fetchRentals();
+        fetchRentals(1);
         fetchAvailableCars();
     }, []);
 
-    const fetchRentals = async () => {
+    // Effect to refetch when filters change
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            fetchRentals(1);
+        }, 500);
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm, filterStatus]);
+
+    const fetchRentals = async (page = 1) => {
         try {
             setLoading(true);
-            const data = await rentalsApi.getAll();
-            setRentals(data || []);
+            const response = await rentalsApi.getAll({
+                page,
+                limit: 10,
+                search: searchTerm,
+                status: filterStatus
+            });
+
+            if (response && response.rentals) {
+                setRentals(response.rentals);
+                setPagination(response.pagination);
+            } else if (Array.isArray(response)) {
+                // Fallback / legacy support
+                setRentals(response);
+                setPagination({ page: 1, limit: response.length, total: response.length, pages: 1 });
+            } else {
+                setRentals([]);
+            }
         } catch (error) {
             console.error('Error fetching rentals:', error.message);
         } finally {
@@ -98,9 +122,10 @@ const Rentals = () => {
 
     const fetchAvailableCars = async () => {
         try {
-            const data = await carsApi.getAll();
-            // Filter only available cars
-            setCars(data ? data.filter(c => c.status === 'available') : []);
+            // Fetch only available cars for the dropdown, with a high limit
+            const response = await carsApi.getAll({ status: 'available', limit: 1000 });
+            const availableCars = response.cars || (Array.isArray(response) ? response : []);
+            setCars(availableCars);
         } catch (error) {
             console.error('Error fetching cars:', error);
         }
@@ -229,24 +254,8 @@ const Rentals = () => {
         }
     };
 
-    const filteredRentals = (rentals || []).filter(rental => {
-        if (!rental) return false;
-
-        // Handle search
-        const customerName = rental.customer_name?.toLowerCase() || '';
-        const carMake = rental.cars?.make?.toLowerCase() || '';
-        const licensePlate = rental.cars?.license_plate?.toLowerCase() || '';
-        const searchLower = searchTerm.toLowerCase();
-
-        const matchesSearch = !searchTerm ||
-            customerName.includes(searchLower) ||
-            carMake.includes(searchLower) ||
-            licensePlate.includes(searchLower);
-
-        const matchesStatus = filterStatus === 'all' || rental.status === filterStatus;
-
-        return matchesSearch && matchesStatus;
-    });
+    // Data is now filtered on the backend
+    const filteredRentals = rentals;
 
     return (
         <div className="space-y-6">
@@ -548,6 +557,36 @@ const Rentals = () => {
                     </table>
                 </div>
             </Card>
+
+            {/* Pagination Controls */}
+            {!loading && rentals.length > 0 && (
+                <div className="flex items-center justify-between bg-card p-4 rounded-lg border border-border shadow-sm">
+                    <p className="text-sm text-muted-foreground">
+                        Showing <span className="font-medium">{rentals.length}</span> of <span className="font-medium">{pagination.total}</span> rentals
+                    </p>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchRentals(pagination.page - 1)}
+                            disabled={pagination.page <= 1}
+                        >
+                            Previous
+                        </Button>
+                        <span className="flex items-center px-2 text-sm font-medium">
+                            Page {pagination.page} of {pagination.pages}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchRentals(pagination.page + 1)}
+                            disabled={pagination.page >= pagination.pages}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Modal - content passed to Modal component */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="New Booking">

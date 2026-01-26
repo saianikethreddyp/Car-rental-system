@@ -166,6 +166,18 @@ const CarDetailsModal = ({ isOpen, onClose, car, formatCurrency = (v) => `₹${v
                                 </div>
                             )}
                         </div>
+
+                        {/* Audit Info */}
+                        <div className="mt-6 pt-4 border-t border-border text-xs text-muted-foreground">
+                            <div className="flex flex-col sm:flex-row justify-between gap-2">
+                                {car.created_by && (
+                                    <p>Created by: <span className="font-medium text-foreground">{car.created_by}</span></p>
+                                )}
+                                {car.modified_by && (
+                                    <p>Last updated by: <span className="font-medium text-foreground">{car.modified_by}</span></p>
+                                )}
+                            </div>
+                        </div>
                     </>
                 ) : (
                     <div className="text-center py-10 text-destructive">Failed to load data</div>

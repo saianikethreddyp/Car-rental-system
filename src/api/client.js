@@ -86,7 +86,7 @@ export const rentalsApi = {
 };
 
 export const carsApi = {
-    getAll: (status) => api.get('/cars', { params: { status } }),
+    getAll: (filters = {}) => api.get('/cars', { params: filters }),
     getById: (id) => api.get(`/cars/${id}`),
     create: (data) => api.post('/cars', data),
     update: (id, data) => api.put(`/cars/${id}`, data),
@@ -98,7 +98,7 @@ export const carsApi = {
 };
 
 export const customersApi = {
-    getAll: (search) => api.get('/customers', { params: { search } }),
+    getAll: (filters = {}) => api.get('/customers', { params: filters }),
 };
 
 export const uploadApi = {
@@ -111,6 +111,12 @@ export const uploadApi = {
             }
         });
     }
+};
+
+export const sessionsApi = {
+    getAll: () => api.get('/auth/sessions'),
+    revoke: (sessionId) => api.delete(`/auth/sessions/${sessionId}`),
+    revokeAll: () => api.delete('/auth/sessions'),
 };
 
 export default api;

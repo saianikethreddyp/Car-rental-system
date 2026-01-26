@@ -8,10 +8,9 @@ import { getImageUrl } from '../../utils/image';
 /**
  * DocumentCard - Displays identity document with front/back previews
  */
-const DocumentCard = ({ title, number, frontUrl, backUrl, icon: IconComponent, onView }) => (
+const DocumentCard = ({ title, number, frontUrl, backUrl, onView }) => (
     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
         <div className="flex items-center gap-2">
-            <IconComponent size={16} className="text-primary" />
             <span className="font-medium text-foreground">{title}</span>
         </div>
         {number ? (
@@ -329,9 +328,12 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency, onStatusU
                     </div>
                 )}
 
-                {/* Timestamps */}
-                <div className="pt-4 border-t border-border text-xs text-muted-foreground">
-                    <p>Created: {formatDate(rental.created_at, true)}</p>
+                {/* Timestamps & Audit */}
+                <div className="pt-4 border-t border-border text-xs text-muted-foreground flex justify-between items-center">
+                    <div>
+                        <p>Created: {formatDate(rental.created_at, true)}</p>
+                        {rental.created_by && <p className="mt-1">Booked by: <span className="font-medium text-foreground">{rental.created_by}</span></p>}
+                    </div>
                 </div>
             </div>
 

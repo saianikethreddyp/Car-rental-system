@@ -45,8 +45,9 @@ const Payments = () => {
     const fetchRentals = async () => {
         try {
             setLoading(true);
-            const data = await rentalsApi.getAll(); // API returns rentals array or object
-            setRentals(data.rentals || data || []);
+            // Request larger limit for payments view
+            const response = await rentalsApi.getAll({ limit: 100 });
+            setRentals(response.rentals || (Array.isArray(response) ? response : []));
         } catch (error) {
             console.error('Error fetching rentals:', error);
             toast.error('Failed to load rentals');
