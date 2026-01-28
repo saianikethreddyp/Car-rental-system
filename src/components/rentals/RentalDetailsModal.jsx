@@ -218,6 +218,7 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency, onStatusU
                                                 {charge.type === 'extension' && '📅'}
                                                 {charge.type === 'damage' && '🔧'}
                                                 {charge.type === 'fuel' && '⛽'}
+                                                {charge.type === 'fastag' && '🛣️'}
                                                 {charge.type === 'fine' && '📋'}
                                                 {charge.type === 'discount' && '💸'}
                                                 {charge.type === 'other' && '📝'}

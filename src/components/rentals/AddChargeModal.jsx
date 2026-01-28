@@ -9,6 +9,7 @@ const CHARGE_TYPES = [
     { value: 'extension', label: '📅 Extension - Extra days' },
     { value: 'damage', label: '🔧 Damage - Repair costs' },
     { value: 'fuel', label: '⛽ Fuel - Fuel charges' },
+    { value: 'fastag', label: '🛣️ Fastag - Toll charges' },
     { value: 'fine', label: '📋 Fine - Traffic/Late fees' },
     { value: 'discount', label: '💸 Discount - Price reduction' },
     { value: 'other', label: '📝 Other - Miscellaneous' },
