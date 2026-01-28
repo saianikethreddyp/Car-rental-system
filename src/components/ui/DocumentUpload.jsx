@@ -17,6 +17,11 @@ const DocumentUpload = ({
     const [uploading, setUploading] = useState(false);
     const [cameraActive, setCameraActive] = useState(false);
 
+    // Sync preview with external prop changes
+    React.useEffect(() => {
+        setPreview(existingUrl);
+    }, [existingUrl]);
+
     const fileInputRef = useRef(null);
     const videoRef = useRef(null);
     const canvasRef = useRef(null);

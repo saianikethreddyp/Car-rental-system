@@ -106,9 +106,14 @@ const Payments = () => {
 
         if (!matchesSearch) return false;
 
-        if (filterStatus === 'all') return true;
+        if (filterStatus === 'all') {
+            return rental.status !== 'cancelled';
+        }
 
         const status = rental.payment_status || 'pending';
+        // Also exclude cancelled from specific filters unless we have a 'cancelled' filter (which we don't)
+        if (rental.status === 'cancelled') return false;
+
         return status === filterStatus;
     });
 

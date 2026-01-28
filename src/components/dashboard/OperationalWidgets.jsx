@@ -283,6 +283,9 @@ export const UpcomingReturns = ({ selectedDate }) => {
                                             className="text-[10px] px-1.5 py-0"
                                         >
                                             {isToday(rental.end_date) ? 'Today' : 'Tomorrow'}
+                                            <span className="ml-1 opacity-80">
+                                                {new Date(rental.end_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
                                         </Badge>
                                     </div>
                                     <ReturnCountdown targetDate={rental.end_date} />

@@ -112,7 +112,7 @@ const Dashboard = () => {
             </div>
 
             {/* Stats Grid - Responsive */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
                 <StatsCard
                     title="Fleet Status"
                     value={`${stats.availableCars}/${stats.totalCars}`}
@@ -130,6 +130,13 @@ const Dashboard = () => {
                         const year = d.getFullYear();
                         return `${day}/${month}/${year}`;
                     })()}
+                />
+                <StatsCard
+                    title="Daily Revenue"
+                    value={formatCurrency(stats.dailyRevenue)}
+                    icon={DollarSign}
+                    subtext="Bookings starting today"
+                    trend={null}
                 />
                 <StatsCard
                     title="Monthly Revenue"

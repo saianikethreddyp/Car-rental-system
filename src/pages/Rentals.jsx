@@ -3,7 +3,7 @@ import { formatDate } from '../utils/date';
 import { rentalsApi, carsApi } from '../api/client';
 
 import { useSettings } from '../context/SettingsContext';
-import { Plus, Search, Calendar, Phone, CheckCircle, XCircle, Clock, Filter, FileText, ChevronDown, ChevronUp, CreditCard, IdCard, Car as CarIcon, Eye } from 'lucide-react';
+import { Plus, Search, Calendar, Phone, CheckCircle, XCircle, Clock, Filter, FileText, ChevronDown, ChevronUp, CreditCard, IdCard, Car as CarIcon, Eye, Calculator } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -40,6 +40,7 @@ const Rentals = () => {
     const [filterStatus, setFilterStatus] = useState('all');
     const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
     const [selectedRentalForInvoice, setSelectedRentalForInvoice] = useState(null);
+    const [editingRentalId, setEditingRentalId] = useState(null); // Fix for Edit Mode
     const [submitting, setSubmitting] = useState(false);
     const [dateError, setDateError] = useState('');
     const [showDocuments, setShowDocuments] = useState(false);
@@ -172,19 +173,37 @@ const Rentals = () => {
         setSubmitting(true);
 
         try {
-            // Determine status based on Start Date
+            // Determine status based on Start Date if creating, or keep/update if editing
             // If Start Date is TODAY -> Active
             // If Start Date is FUTURE -> Pending
             const todayStr = new Date().toISOString().split('T')[0];
             const startDateStr = formData.start_date; // YYYY-MM-DD
 
             // Allow string comparison for ISO dates
-            const status = startDateStr > todayStr ? 'pending' : 'active';
+            let status = startDateStr > todayStr ? 'pending' : 'active';
 
-            await rentalsApi.create({ ...formData, status });
+            // If we are editing (e.g. starting a rental), and documents are now present, 
+            // the user likely INTENDS to start it if the date is reached.
+            // But let's stick to the button action determining status unless we are creating.
+
+            if (editingRentalId) {
+                // Keep existing status unless we are fulfilling a "Start Rental" flow which usually sets it to active via button
+                // But if we are just editing details, status might stay same.
+                // However, for the specific "Start Rental" flow where we opened modal to add docs:
+                // We should probably ask the user or infer. 
+                // Let's assume: if start date is today/past, set active? No, that's risky.
+                // Let's just update the details. The "Start Rental" button logic will handle the status flip separately 
+                // OR we can make this the "Activate" action.
+                // Ideally, we update the data, then if it was a "Start Rental" attempt, we try to activate.
+                // Simplified: Update the rental data.
+                await rentalsApi.update(editingRentalId, formData);
+            } else {
+                await rentalsApi.create({ ...formData, status });
+            }
 
             // Reset form
             setIsModalOpen(false);
+            setEditingRentalId(null);
             setFormData({
                 car_id: '',
                 created_by: '',
@@ -215,6 +234,7 @@ const Rentals = () => {
                 car_photos: []
             });
             setShowDocuments(false);
+            setEditingRentalId(null); // Reset edit state
             setDateError('');
             fetchRentals();
             fetchAvailableCars();
@@ -226,6 +246,43 @@ const Rentals = () => {
         }
     };
 
+    // Manual Calculator State
+    const [calcRate, setCalcRate] = useState('');
+    const [calcDays, setCalcDays] = useState('');
+
+    // Update calcRate when car changes
+    useEffect(() => {
+        if (formData.car_id) {
+            const selectedCar = cars.find(c => c.id === formData.car_id || c._id === formData.car_id);
+            if (selectedCar && selectedCar.daily_rate) {
+                setCalcRate(selectedCar.daily_rate);
+            }
+        }
+    }, [formData.car_id, cars]);
+
+    // Update calcDays when dates change
+    useEffect(() => {
+        if (formData.start_date && formData.end_date) {
+            const start = new Date(formData.start_date);
+            const end = new Date(formData.end_date);
+            if (!isNaN(start) && !isNaN(end)) {
+                const diffTime = Math.abs(end - start);
+                let days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (days === 0) days = 1;
+                setCalcDays(days);
+            }
+        }
+    }, [formData.start_date, formData.end_date]);
+
+    // Calculate Total from Manual Inputs
+    const calculateManualTotal = () => {
+        const rate = parseFloat(calcRate) || 0;
+        const days = parseFloat(calcDays) || 0;
+        const total = rate * days;
+        setFormData(prev => ({ ...prev, total_amount: total }));
+        toast.success(`Calculated: ₹${rate} x ${days} days = ₹${total}`);
+    };
+
     const handleStatusUpdate = async (rentalId, carId, newStatus) => {
         try {
             await rentalsApi.update(rentalId, { status: newStatus });
@@ -234,7 +291,60 @@ const Rentals = () => {
             fetchRentals();
             fetchAvailableCars();
         } catch (error) {
-            alert(error.message);
+            // FIX: Handle backend validation errors (missing docs) gracefully
+            const errorMsg = error.response?.data?.error || error.message;
+            if (errorMsg.includes('Cannot start rental without documents')) {
+                alert("Documents missing! Please use the 'Start Rental' button to upload documents.");
+            } else {
+                alert(errorMsg);
+            }
+        }
+    };
+
+    const handleStartRental = (rental) => {
+        // Proactive check: If docs missing, open edit modal
+        const hasDocs = rental.aadhar_front_image_url && rental.license_front_image_url && rental.car_photos?.length > 0;
+
+        if (!hasDocs) {
+            // Populate form and open modal
+            setEditingRentalId(rental._id);
+            setFormData({
+                car_id: rental.car_id?._id || rental.car_id, // Handle populated vs raw
+                created_by: rental.created_by || '',
+                customer_name: rental.customer_name,
+                customer_phone: rental.customer_phone,
+                secondary_phone: rental.secondary_phone || '',
+                parent_phone: rental.parent_phone || '',
+                from_location: rental.from_location,
+                to_location: rental.to_location,
+                start_date: rental.start_date ? new Date(rental.start_date).toISOString().split('T')[0] : '',
+                start_time: rental.start_time || '',
+                end_date: rental.end_date ? new Date(rental.end_date).toISOString().split('T')[0] : '',
+                end_time: rental.end_time || '',
+                total_amount: rental.total_amount,
+                payment_method: rental.payment_method,
+                // Documents
+                aadhar_number: rental.aadhar_number || '',
+                aadhar_front_image_url: rental.aadhar_front_image_url || '',
+                aadhar_back_image_url: rental.aadhar_back_image_url || '',
+                pan_number: rental.pan_number || '',
+                pan_front_image_url: rental.pan_front_image_url || '',
+                pan_back_image_url: rental.pan_back_image_url || '',
+                license_number: rental.license_number || '',
+                license_front_image_url: rental.license_front_image_url || '',
+                license_back_image_url: rental.license_back_image_url || '',
+                rc_number: rental.rc_number || '',
+                rc_front_image_url: rental.rc_front_image_url || '',
+                rc_back_image_url: rental.rc_back_image_url || '',
+                car_photos: rental.car_photos || []
+            });
+            // Show docs section automatically
+            setShowDocuments(true);
+            setIsModalOpen(true);
+            alert("Please upload the required Identity Documents and Car Photos to start the rental.");
+        } else {
+            // If docs exist, just activate
+            handleStatusUpdate(rental._id, rental.car_id?._id, 'active');
         }
     };
 
@@ -271,7 +381,15 @@ const Rentals = () => {
                 }}>
                     New Booking
                 </Button>
-            </div>
+            </div> // Fixed closing tag mismatch if any
+
+            {/* Note about Pending Rentals */}
+            {rentals.some(r => r.status === 'pending') && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 flex items-center gap-2">
+                    <Clock size={16} />
+                    <span>You have pending bookings. Click "Start Rental" when the customer arrives to upload documents and activate the trip.</span>
+                </div>
+            )}
 
             {/* Filters */}
             <Card className="p-4">
@@ -498,6 +616,26 @@ const Rentals = () => {
                                         </td>
                                         <td className="p-4">
                                             <div className="flex gap-2">
+                                                {/* Pre-booking / Start Rental Action */}
+                                                {rental.status === 'pending' && (
+                                                    <button
+                                                        onClick={() => handleStartRental(rental)}
+                                                        className="flex items-center gap-1 px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md text-xs font-medium transition-colors shadow-sm"
+                                                        title="Customer arrived? Upload docs and start"
+                                                    >
+                                                        <CarIcon size={14} /> Start Rental
+                                                    </button>
+                                                )}
+                                                {/* Allow Cancel for Pending Rentals too */}
+                                                {rental.status === 'pending' && (
+                                                    <button
+                                                        onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'cancelled')}
+                                                        className="text-destructive hover:text-destructive/80 p-1.5 hover:bg-destructive/10 rounded-md transition-colors"
+                                                        title="Cancel Booking"
+                                                    >
+                                                        <XCircle size={16} />
+                                                    </button>
+                                                )}
                                                 {/* View Details Button */}
                                                 <button
                                                     onClick={() => {
@@ -589,7 +727,7 @@ const Rentals = () => {
             )}
 
             {/* Modal - content passed to Modal component */}
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="New Booking">
+            <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingRentalId(null); }} title={editingRentalId ? "Complete Booking Details" : "New Booking"}>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <Select
                         label="Select Car"
@@ -803,6 +941,44 @@ const Rentals = () => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Manual Price Calculator */}
+                        <div className="col-span-1 sm:col-span-2 bg-secondary/30 p-3 rounded-lg border border-border space-y-3">
+                            <div className="flex items-center gap-2">
+                                <Calculator size={16} className="text-primary" />
+                                <span className="text-sm font-medium">Price Calculator</span>
+                            </div>
+                            <div className="flex items-end gap-3">
+                                <div className="flex-1">
+                                    <Input
+                                        label="Rate (₹/day)"
+                                        type="number"
+                                        value={calcRate}
+                                        onChange={(e) => setCalcRate(e.target.value)}
+                                        placeholder="Rate"
+                                        className="h-9"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <Input
+                                        label="Days"
+                                        type="number"
+                                        value={calcDays}
+                                        onChange={(e) => setCalcDays(e.target.value)}
+                                        placeholder="Days"
+                                        className="h-9"
+                                    />
+                                </div>
+                                <Button
+                                    type="button"
+                                    onClick={calculateManualTotal}
+                                    size="sm"
+                                    className="mb-[2px] h-9"
+                                >
+                                    Calculate
+                                </Button>
+                            </div>
+                        </div>
+
                         <div>
                             <Input
                                 label="Total Amount (₹)"
@@ -813,6 +989,16 @@ const Rentals = () => {
                                 placeholder="Enter agreed amount"
                                 required
                             />
+                            {formData.car_id && (
+                                <p className="text-[10px] text-muted-foreground mt-1 ml-1">
+                                    {(() => {
+                                        const selectedCar = cars.find(c => c.id === formData.car_id || c._id === formData.car_id);
+                                        return selectedCar?.daily_rate
+                                            ? `Rate: ₹${selectedCar.daily_rate}/day`
+                                            : 'Daily rate not set for this car';
+                                    })()}
+                                </p>
+                            )}
                         </div>
                         <Select
                             label="Payment Method"
@@ -838,7 +1024,9 @@ const Rentals = () => {
                             isLoading={submitting}
                             size="lg"
                         >
-                            {submitting ? 'Creating Booking...' : 'Confirm Booking'}
+                            {submitting
+                                ? (editingRentalId ? 'Updating...' : 'Creating Booking...')
+                                : (editingRentalId ? 'Update Booking' : 'Confirm Booking')}
                         </Button>
                     </div>
                 </form >
