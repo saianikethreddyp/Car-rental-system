@@ -33,9 +33,7 @@ const Dashboard = () => {
         activeRentals: 0,
         totalRevenue: 0,
         dailyRevenue: 0,
-        totalCustomers: 0,
-        monthlyRevenue: 0,
-        lastMonthRevenue: 0
+        totalCustomers: 0
     });
     const [recentRentals, setRecentRentals] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -112,7 +110,7 @@ const Dashboard = () => {
             </div>
 
             {/* Stats Grid - Responsive */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 <StatsCard
                     title="Fleet Status"
                     value={`${stats.availableCars}/${stats.totalCars}`}
@@ -138,15 +136,7 @@ const Dashboard = () => {
                     subtext="Bookings starting today"
                     trend={null}
                 />
-                <StatsCard
-                    title="Monthly Revenue"
-                    value={formatCurrency(stats.monthlyRevenue)}
-                    icon={DollarSign}
-                    subtext={stats.lastMonthRevenue > 0
-                        ? `${stats.monthlyRevenue >= stats.lastMonthRevenue ? '↑' : '↓'} ${Math.abs(Math.round(((stats.monthlyRevenue - stats.lastMonthRevenue) / stats.lastMonthRevenue) * 100))}% vs last month`
-                        : 'This month'
-                    }
-                />
+
                 <StatsCard
                     title="Total Customers"
                     value={stats.totalCustomers}

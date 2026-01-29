@@ -16,6 +16,7 @@ import {
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
+import Modal from '../ui/Modal';
 
 // ============================================
 // 1. FLEET AVAILABILITY CALENDAR (7 days)
@@ -215,6 +216,50 @@ export const UpcomingReturns = ({ selectedDate }) => {
 
     const [returns, setReturns] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedReturn, setSelectedReturn] = useState(null);
+    const [detailModalOpen, setDetailModalOpen] = useState(false);
+
+    // Helper to format time in 12-hour format with AM/PM
+    const formatTime = (timeStr) => {
+        if (!timeStr) return '';
+
+        // Parse time string (either "HH:MM" or "HH:MM AM/PM")
+        const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+        if (!match) return timeStr;
+
+        let hours = parseInt(match[1]);
+        const minutes = match[2];
+        const meridiem = match[3];
+
+        // If already has AM/PM, return as is
+        if (meridiem) {
+            return `${hours}:${minutes} ${meridiem.toUpperCase()}`;
+        }
+
+        // Convert 24-hour to 12-hour
+        const period = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12; // Convert 0 to 12 for midnight
+        return `${hours}:${minutes} ${period}`;
+    };
+
+    // Helper to get relative date text
+    const getRelativeDate = (dateStr) => {
+        const date = new Date(dateStr);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const rentDate = new Date(date);
+        rentDate.setHours(0, 0, 0, 0);
+
+        const diffTime = rentDate - today;
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Tomorrow';
+        if (diffDays === 2) return 'In 2 days';
+
+        // Show actual date for further out
+        return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+    };
 
     useEffect(() => {
         fetchReturns();
@@ -263,14 +308,18 @@ export const UpcomingReturns = ({ selectedDate }) => {
             {returns.length === 0 ? (
                 <div className="text-center py-6 text-muted-foreground">
                     <CheckCircle size={32} className="mx-auto mb-2 opacity-30" />
-                    <p className="text-sm">No returns due today or tomorrow</p>
+                    <p className="text-sm">No returns in next 48 hours</p>
                 </div>
             ) : (
                 <div className="space-y-3 max-h-[220px] overflow-y-auto">
                     {returns.map(rental => (
                         <div
                             key={rental.id}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border/50 hover:border-border transition-colors"
+                            onClick={() => {
+                                setSelectedReturn(rental);
+                                setDetailModalOpen(true);
+                            }}
+                            className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border/50 hover:border-border transition-colors cursor-pointer md:cursor-default"
                         >
                             <div className={`w-2 h-2 rounded-full shrink-0 ${isToday(rental.end_date) ? 'bg-orange-500 animate-pulse' : 'bg-blue-500'
                                 }`}></div>
@@ -282,10 +331,12 @@ export const UpcomingReturns = ({ selectedDate }) => {
                                             variant={isToday(rental.end_date) ? 'destructive' : 'secondary'}
                                             className="text-[10px] px-1.5 py-0"
                                         >
-                                            {isToday(rental.end_date) ? 'Today' : 'Tomorrow'}
-                                            <span className="ml-1 opacity-80">
-                                                {new Date(rental.end_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
+                                            {getRelativeDate(rental.end_date)}
+                                            {rental.end_time && (
+                                                <span className="ml-1 opacity-80">
+                                                    {formatTime(rental.end_time)}
+                                                </span>
+                                            )}
                                         </Badge>
                                     </div>
                                     <ReturnCountdown targetDate={rental.end_date} />
@@ -298,6 +349,7 @@ export const UpcomingReturns = ({ selectedDate }) => {
                             </div>
                             <a
                                 href={`tel:${rental.customer_phone}`}
+                                onClick={(e) => e.stopPropagation()}
                                 className="p-2 rounded-full hover:bg-primary/10 text-primary transition-colors"
                                 title={`Call ${rental.customer_phone}`}
                             >
@@ -307,6 +359,104 @@ export const UpcomingReturns = ({ selectedDate }) => {
                     ))}
                 </div>
             )}
+
+            {/* Detail Modal for Mobile */}
+            <Modal
+                isOpen={detailModalOpen}
+                onClose={() => setDetailModalOpen(false)}
+                title="Return Details"
+            >
+                {selectedReturn && (
+                    <div className="space-y-4">
+                        {/* Customer Info */}
+                        <div className="bg-muted/50 p-4 rounded-lg">
+                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">Customer</h4>
+                            <p className="text-lg font-semibold text-foreground">{selectedReturn.customer_name}</p>
+                            <a
+                                href={`tel:${selectedReturn.customer_phone}`}
+                                className="text-sm text-primary hover:underline flex items-center gap-1 mt-1"
+                            >
+                                <Phone size={14} />
+                                {selectedReturn.customer_phone}
+                            </a>
+                        </div>
+
+                        {/* Car Info */}
+                        <div className="bg-muted/50 p-4 rounded-lg">
+                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">Vehicle</h4>
+                            <p className="text-lg font-semibold text-foreground">
+                                {selectedReturn.car_id?.make} {selectedReturn.car_id?.model}
+                            </p>
+                            <p className="text-sm text-muted-foreground font-mono mt-1">
+                                {selectedReturn.car_id?.license_plate}
+                            </p>
+                        </div>
+
+                        {/* Return Info */}
+                        <div className="bg-muted/50 p-4 rounded-lg">
+                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">Return Time</h4>
+                            <div className="flex items-center gap-2">
+                                <Badge variant={isToday(selectedReturn.end_date) ? 'destructive' : 'default'}>
+                                    {getRelativeDate(selectedReturn.end_date)}
+                                </Badge>
+                                <span className="text-lg font-semibold text-foreground">
+                                    {new Date(selectedReturn.end_date).toLocaleDateString('en-IN', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                    })}
+                                </span>
+                            </div>
+                            {selectedReturn.end_time && (
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    Time: <span className="font-semibold text-foreground">{formatTime(selectedReturn.end_time)}</span>
+                                </p>
+                            )}
+                            <div className="mt-3 pt-3 border-t border-border">
+                                <ReturnCountdown targetDate={selectedReturn.end_date} />
+                            </div>
+                        </div>
+
+                        {/* Rental Period */}
+                        <div className="bg-muted/50 p-4 rounded-lg">
+                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">Rental Period</h4>
+                            <div className="space-y-2">
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Start Date</p>
+                                    <p className="text-sm font-semibold text-foreground">
+                                        {new Date(selectedReturn.start_date).toLocaleDateString('en-IN', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric'
+                                        })}
+                                        {selectedReturn.start_time && ` at ${formatTime(selectedReturn.start_time)}`}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground">End Date</p>
+                                    <p className="text-sm font-semibold text-foreground">
+                                        {new Date(selectedReturn.end_date).toLocaleDateString('en-IN', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric'
+                                        })}
+                                        {selectedReturn.end_time && ` at ${formatTime(selectedReturn.end_time)}`}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Button */}
+                        <a
+                            href={`tel:${selectedReturn.customer_phone}`}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg font-medium transition-colors"
+                        >
+                            <Phone size={18} />
+                            Call Customer
+                        </a>
+                    </div>
+                )}
+            </Modal>
         </Card>
     );
 };

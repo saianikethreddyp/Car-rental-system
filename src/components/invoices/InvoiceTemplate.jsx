@@ -17,6 +17,29 @@ const InvoiceTemplate = ({ rental, invoiceNumber }) => {
     const diffTime = Math.abs(end - start);
     const rentalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
 
+    // Helper to format time in 12-hour format with AM/PM
+    const formatTime = (timeStr) => {
+        if (!timeStr) return '';
+
+        // Parse time string (either "HH:MM" or "HH:MM AM/PM")
+        const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+        if (!match) return timeStr;
+
+        let hours = parseInt(match[1]);
+        const minutes = match[2];
+        const meridiem = match[3];
+
+        // If already has AM/PM, return as is
+        if (meridiem) {
+            return `${hours}:${minutes} ${meridiem.toUpperCase()}`;
+        }
+
+        // Convert 24-hour to 12-hour
+        const period = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12; // Convert 0 to 12 for midnight
+        return `${hours}:${minutes} ${period}`;
+    };
+
     // Calculate amounts
     // Logic update: User requests no tax breakdown and clear listing of extra charges
 
@@ -127,7 +150,16 @@ const InvoiceTemplate = ({ rental, invoiceNumber }) => {
                         <div>
                             <p className="text-xs text-gray-500 uppercase">Rental Period</p>
                             <p className="font-semibold text-gray-900">{startDate} - {endDate}</p>
-                            <p className="text-sm text-gray-500">{rentalDays} day(s)</p>
+                            <p className="text-sm text-gray-500">
+                                {rentalDays} day(s)
+                                {(rental.start_time || rental.end_time) && (
+                                    <span className="ml-2">
+                                        {rental.start_time && `${formatTime(rental.start_time)}`}
+                                        {rental.start_time && rental.end_time && ' - '}
+                                        {rental.end_time && formatTime(rental.end_time)}
+                                    </span>
+                                )}
+                            </p>
                         </div>
                         <div>
                             <p className="text-xs text-gray-500 uppercase">Payment Method</p>

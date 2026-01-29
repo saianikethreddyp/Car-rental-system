@@ -405,7 +405,7 @@ const Rentals = () => {
                         />
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-                        {['all', 'active', 'completed', 'cancelled'].map(status => (
+                        {['all', 'pre_booking', 'active', 'completed', 'cancelled'].map(status => (
                             <button
                                 key={status}
                                 onClick={() => setFilterStatus(status)}
@@ -414,7 +414,7 @@ const Rentals = () => {
                                     : 'bg-background border border-input text-muted-foreground hover:bg-muted'
                                     }`}
                             >
-                                {status}
+                                {status === 'pre_booking' ? 'Pre Booking' : status}
                             </button>
                         ))}
                     </div>
@@ -450,7 +450,8 @@ const Rentals = () => {
                                 </div>
                                 <Badge variant={
                                     rental.status === 'active' ? 'success' :
-                                        rental.status === 'completed' ? 'secondary' : 'destructive'
+                                        rental.status === 'completed' ? 'secondary' :
+                                            rental.status === 'pending' ? 'default' : 'destructive'
                                 }>
                                     {rental.status}
                                 </Badge>
@@ -487,6 +488,25 @@ const Rentals = () => {
 
                             {/* Actions */}
                             <div className="pt-2 border-t border-border flex flex-wrap gap-2">
+                                {/* Pre-Booking Actions - Start Rental & Cancel */}
+                                {rental.status === 'pending' && (
+                                    <>
+                                        <button
+                                            onClick={() => handleStartRental(rental)}
+                                            className="flex-1 min-w-[140px] px-3 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg font-medium transition-colors flex items-center justify-center gap-1 shadow-sm"
+                                        >
+                                            <CarIcon size={14} /> Start Rental
+                                        </button>
+                                        <button
+                                            onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'cancelled')}
+                                            className="px-3 py-2 text-sm bg-red-50 text-red-700 hover:bg-red-100 rounded-lg font-medium transition-colors flex items-center gap-1"
+                                        >
+                                            <XCircle size={14} /> Cancel
+                                        </button>
+                                    </>
+                                )}
+
+                                {/* Always Visible - View & Invoice */}
                                 <button
                                     onClick={() => {
                                         setSelectedRentalForDetails(rental);
@@ -505,6 +525,8 @@ const Rentals = () => {
                                 >
                                     <FileText size={14} /> Invoice
                                 </button>
+
+                                {/* Active Rental Actions - Charge, Complete, Cancel */}
                                 {rental.status === 'active' && (
                                     <>
                                         <button
@@ -609,7 +631,8 @@ const Rentals = () => {
                                         <td className="p-4">
                                             <Badge variant={
                                                 rental.status === 'active' ? 'success' :
-                                                    rental.status === 'completed' ? 'secondary' : 'destructive'
+                                                    rental.status === 'completed' ? 'secondary' :
+                                                        rental.status === 'pending' ? 'default' : 'destructive'
                                             } className="shadow-none">
                                                 {rental.status}
                                             </Badge>
