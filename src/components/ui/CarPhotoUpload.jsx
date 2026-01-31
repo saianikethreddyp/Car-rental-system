@@ -14,7 +14,8 @@ const CarPhotoUpload = ({
     const [uploading, setUploading] = useState(false);
     const [cameraActive, setCameraActive] = useState(false);
 
-    const fileInputRef = useRef(null);
+    const cameraInputRef = useRef(null);  // For camera capture
+    const galleryInputRef = useRef(null); // For gallery/file picker
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const streamRef = useRef(null);
@@ -23,9 +24,9 @@ const CarPhotoUpload = ({
     const startCamera = async () => {
         // Check if getUserMedia is available (requires HTTPS or localhost)
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            // Fallback: trigger file input with camera capture
-            if (fileInputRef.current) {
-                fileInputRef.current.click();
+            // Fallback: trigger camera input (native camera via capture attribute)
+            if (cameraInputRef.current) {
+                cameraInputRef.current.click();
             }
             return;
         }
@@ -47,14 +48,21 @@ const CarPhotoUpload = ({
             console.error('Camera access error:', err);
             setCameraActive(false);
 
-            // On mobile, if camera access fails, trigger file picker with camera capture attribute
+            // On mobile, if camera access fails, trigger native camera input
             if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                if (fileInputRef.current) {
-                    fileInputRef.current.click();
+                if (cameraInputRef.current) {
+                    cameraInputRef.current.click();
                 }
             } else {
                 alert('Unable to access camera. Please check permissions or use file upload.');
             }
+        }
+    };
+
+    // Handle gallery/file picker button click
+    const openGalleryPicker = () => {
+        if (galleryInputRef.current) {
+            galleryInputRef.current.click();
         }
     };
 
@@ -91,9 +99,12 @@ const CarPhotoUpload = ({
         if (file) {
             await uploadToServer(file);
         }
-        // Reset input
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
+        // Reset inputs
+        if (cameraInputRef.current) {
+            cameraInputRef.current.value = '';
+        }
+        if (galleryInputRef.current) {
+            galleryInputRef.current.value = '';
         }
     };
 
@@ -204,23 +215,30 @@ const CarPhotoUpload = ({
                         </button>
                         <button
                             type="button"
-                            onClick={() => fileInputRef.current?.click()}
+                            onClick={openGalleryPicker}
                             disabled={uploading}
                             className="flex-1 flex flex-col items-center justify-center gap-1 border-2 border-dashed border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors text-muted-foreground hover:text-primary"
                         >
                             <Upload size={16} />
-                            <span className="text-[9px]">{uploading ? '...' : 'Upload'}</span>
+                            <span className="text-[9px]">{uploading ? '...' : 'Gallery'}</span>
                         </button>
                     </div>
                 )}
             </div>
 
-            {/* Hidden file input */}
+            {/* Hidden file inputs - separate for camera and gallery */}
             <input
-                ref={fileInputRef}
+                ref={cameraInputRef}
                 type="file"
                 accept="image/*"
                 capture="environment"
+                onChange={handleFileSelect}
+                className="hidden"
+            />
+            <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/*"
                 onChange={handleFileSelect}
                 className="hidden"
             />
