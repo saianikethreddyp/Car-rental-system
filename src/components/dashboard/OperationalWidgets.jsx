@@ -159,10 +159,39 @@ export const FleetCalendar = ({ selectedDate }) => {
 // ============================================
 // 2. UPCOMING RETURNS
 // ============================================
-// Helper Component for Countdown
-const ReturnCountdown = ({ targetDate }) => {
+// Helper Component for Countdown - now handles end_time properly
+const ReturnCountdown = ({ targetDate, targetTime }) => {
+    // Combine date and time for accurate countdown
+    const getTargetDateTime = () => {
+        let dateTime = new Date(targetDate);
+
+        if (targetTime) {
+            // Parse time string (format: "HH:MM" or "HH:MM AM/PM")
+            const timeParts = targetTime.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+            if (timeParts) {
+                let hours = parseInt(timeParts[1]);
+                const minutes = parseInt(timeParts[2]);
+                const meridiem = timeParts[3];
+
+                // Convert to 24-hour format if AM/PM present
+                if (meridiem) {
+                    if (meridiem.toUpperCase() === 'PM' && hours !== 12) {
+                        hours += 12;
+                    } else if (meridiem.toUpperCase() === 'AM' && hours === 12) {
+                        hours = 0;
+                    }
+                }
+
+                dateTime.setHours(hours, minutes, 0, 0);
+            }
+        }
+
+        return dateTime;
+    };
+
     const calculateTimeLeft = () => {
-        const difference = +new Date(targetDate) - +new Date();
+        const target = getTargetDateTime();
+        const difference = +target - +new Date();
         let timeLeft = {};
 
         if (difference > 0) {
@@ -190,24 +219,23 @@ const ReturnCountdown = ({ targetDate }) => {
             setTimeLeft(calculateTimeLeft());
         }, 1000);
         return () => clearInterval(timer);
-    }, [targetDate]);
+    }, [targetDate, targetTime]);
 
     if (timeLeft.overdue) {
         return (
-            <span className="text-sm font-bold text-red-700 bg-red-100 border border-red-200 px-2 py-1 rounded-md shadow-sm">
-                OVERDUE: -{timeLeft.h}h {timeLeft.m}m
+            <span className="text-xs font-bold text-red-700 bg-red-100 border border-red-200 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+                ⚠️ -{timeLeft.h}h {timeLeft.m}m
             </span>
         );
     }
 
     if (Object.keys(timeLeft).length === 0) {
-        return <span className="text-sm font-bold text-red-600 animate-pulse">DUE NOW</span>;
+        return <span className="text-xs font-bold text-red-600 animate-pulse">DUE NOW</span>;
     }
 
     return (
-        <span className="text-sm font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-1 rounded-md flex items-center gap-1.5 shadow-sm">
-            <Clock size={14} className="text-red-500" />
-            {timeLeft.h}h {timeLeft.m}m {timeLeft.s}s
+        <span className="text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+            ⏱️ {timeLeft.h}h {timeLeft.m}m
         </span>
     );
 };
@@ -311,7 +339,7 @@ export const UpcomingReturns = ({ selectedDate }) => {
                     <p className="text-sm">No returns in next 48 hours</p>
                 </div>
             ) : (
-                <div className="space-y-3 max-h-[220px] overflow-y-auto">
+                <div className="space-y-3 max-h-[280px] overflow-y-auto">
                     {returns.map(rental => (
                         <div
                             key={rental.id}
@@ -319,42 +347,48 @@ export const UpcomingReturns = ({ selectedDate }) => {
                                 setSelectedReturn(rental);
                                 setDetailModalOpen(true);
                             }}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border/50 hover:border-border transition-colors cursor-pointer md:cursor-default"
+                            className="p-3 rounded-lg bg-muted/50 border border-border/50 hover:border-border transition-colors cursor-pointer touch-manipulation"
                         >
-                            <div className={`w-2 h-2 rounded-full shrink-0 ${isToday(rental.end_date) ? 'bg-orange-500 animate-pulse' : 'bg-blue-500'
-                                }`}></div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-medium text-foreground truncate">{rental.customer_name}</span>
-                                        <Badge
-                                            variant={isToday(rental.end_date) ? 'destructive' : 'secondary'}
-                                            className="text-[10px] px-1.5 py-0"
-                                        >
-                                            {getRelativeDate(rental.end_date)}
-                                            {rental.end_time && (
-                                                <span className="ml-1 opacity-80">
-                                                    {formatTime(rental.end_time)}
-                                                </span>
-                                            )}
-                                        </Badge>
-                                    </div>
-                                    <ReturnCountdown targetDate={rental.end_date} />
+                            {/* Row 1: Customer Name + Phone Button */}
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <div className={`w-2 h-2 rounded-full shrink-0 ${isToday(rental.end_date) ? 'bg-orange-500 animate-pulse' : 'bg-blue-500'}`}></div>
+                                    <span className="font-medium text-foreground truncate">{rental.customer_name}</span>
                                 </div>
-                                <p className="text-xs text-muted-foreground truncate mt-0.5">
-                                    <span className="font-medium text-foreground/80">{rental.car_id?.make} {rental.car_id?.model}</span>
-                                    <span className="mx-1">•</span>
-                                    <span className="font-mono bg-background px-1 rounded border border-border">{rental.car_id?.license_plate}</span>
-                                </p>
+                                <a
+                                    href={`tel:${rental.customer_phone}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="shrink-0 p-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors touch-manipulation"
+                                    title={`Call ${rental.customer_phone}`}
+                                >
+                                    <Phone size={16} />
+                                </a>
                             </div>
-                            <a
-                                href={`tel:${rental.customer_phone}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="p-2 rounded-full hover:bg-primary/10 text-primary transition-colors"
-                                title={`Call ${rental.customer_phone}`}
-                            >
-                                <Phone size={16} />
-                            </a>
+
+                            {/* Row 2: Car Details */}
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                                <Car size={14} className="shrink-0 text-muted-foreground/70" />
+                                <span className="font-medium text-foreground/80">{rental.car_id?.make} {rental.car_id?.model}</span>
+                                <span className="font-mono text-xs bg-background px-1.5 py-0.5 rounded border border-border">{rental.car_id?.license_plate}</span>
+                            </div>
+
+                            {/* Row 3: Return Time + Countdown */}
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                    <Badge
+                                        variant={isToday(rental.end_date) ? 'destructive' : 'secondary'}
+                                        className="text-xs px-2 py-0.5"
+                                    >
+                                        {getRelativeDate(rental.end_date)}
+                                        {rental.end_time && (
+                                            <span className="ml-1">
+                                                {formatTime(rental.end_time)}
+                                            </span>
+                                        )}
+                                    </Badge>
+                                </div>
+                                <ReturnCountdown targetDate={rental.end_date} targetTime={rental.end_time} />
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -413,7 +447,7 @@ export const UpcomingReturns = ({ selectedDate }) => {
                                 </p>
                             )}
                             <div className="mt-3 pt-3 border-t border-border">
-                                <ReturnCountdown targetDate={selectedReturn.end_date} />
+                                <ReturnCountdown targetDate={selectedReturn.end_date} targetTime={selectedReturn.end_time} />
                             </div>
                         </div>
 
@@ -740,7 +774,7 @@ export const TodaysSchedule = ({ selectedDate }) => {
                                                     {rental.customer_name}
                                                 </p>
                                                 {/* Pickup Timer */}
-                                                <ReturnCountdown targetDate={new Date(`${rental.start_date.split('T')[0]}T${rental.start_time || '00:00'}`)} />
+                                                <ReturnCountdown targetDate={rental.start_date} targetTime={rental.start_time} />
                                             </div>
                                             <p className="text-xs text-muted-foreground truncate mt-0.5">
                                                 <span className="font-medium text-foreground/80">{rental.car_id?.make} {rental.car_id?.model}</span>

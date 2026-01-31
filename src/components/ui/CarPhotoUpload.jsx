@@ -19,12 +19,25 @@ const CarPhotoUpload = ({
     const canvasRef = useRef(null);
     const streamRef = useRef(null);
 
-    // Start camera
+    // Start camera with better mobile handling
     const startCamera = async () => {
+        // Check if getUserMedia is available (requires HTTPS or localhost)
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            // Fallback: trigger file input with camera capture
+            if (fileInputRef.current) {
+                fileInputRef.current.click();
+            }
+            return;
+        }
+
         try {
             setCameraActive(true);
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' }
+                video: {
+                    facingMode: 'environment',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
             });
             streamRef.current = stream;
             if (videoRef.current) {
@@ -32,8 +45,16 @@ const CarPhotoUpload = ({
             }
         } catch (err) {
             console.error('Camera access error:', err);
-            alert('Unable to access camera. Please check permissions or use file upload.');
             setCameraActive(false);
+
+            // On mobile, if camera access fails, trigger file picker with camera capture attribute
+            if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                if (fileInputRef.current) {
+                    fileInputRef.current.click();
+                }
+            } else {
+                alert('Unable to access camera. Please check permissions or use file upload.');
+            }
         }
     };
 

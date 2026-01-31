@@ -16,6 +16,7 @@ import CarPhotoUpload from '../components/ui/CarPhotoUpload';
 import RentalDetailsModal from '../components/rentals/RentalDetailsModal';
 import AddChargeModal from '../components/rentals/AddChargeModal';
 import { FileCheck, DollarSign } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const Rentals = () => {
     // Safely access settings or provide defaults to prevent crashes
@@ -404,19 +405,24 @@ const Rentals = () => {
                             className="w-full flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-1 pl-10 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         />
                     </div>
-                    <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-                        {['all', 'pre_booking', 'active', 'completed', 'cancelled'].map(status => (
-                            <button
-                                key={status}
-                                onClick={() => setFilterStatus(status)}
-                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all capitalize whitespace-nowrap ${filterStatus === status
-                                    ? 'bg-primary text-primary-foreground shadow-sm'
-                                    : 'bg-background border border-input text-muted-foreground hover:bg-muted'
-                                    }`}
-                            >
-                                {status === 'pre_booking' ? 'Pre Booking' : status}
-                            </button>
-                        ))}
+                    {/* Filter pills with scroll fade indicator for mobile */}
+                    <div className="relative">
+                        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 snap-x snap-mandatory scrollbar-hide">
+                            {['all', 'pre_booking', 'active', 'completed', 'cancelled'].map(status => (
+                                <button
+                                    key={status}
+                                    onClick={() => setFilterStatus(status)}
+                                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all capitalize whitespace-nowrap snap-start touch-manipulation ${filterStatus === status
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'bg-background border border-input text-muted-foreground hover:bg-muted active:bg-muted/80'
+                                        }`}
+                                >
+                                    {status === 'pre_booking' ? 'Pre Booking' : status}
+                                </button>
+                            ))}
+                        </div>
+                        {/* Fade indicator for mobile scroll */}
+                        <div className="md:hidden absolute right-0 top-0 bottom-2 w-6 bg-gradient-to-l from-card to-transparent pointer-events-none"></div>
                     </div>
                 </div>
             </Card>
@@ -486,22 +492,22 @@ const Rentals = () => {
                                 </div>
                             </div>
 
-                            {/* Actions */}
+                            {/* Actions - improved touch targets for mobile */}
                             <div className="pt-2 border-t border-border flex flex-wrap gap-2">
                                 {/* Pre-Booking Actions - Start Rental & Cancel */}
                                 {rental.status === 'pending' && (
                                     <>
                                         <button
                                             onClick={() => handleStartRental(rental)}
-                                            className="flex-1 min-w-[140px] px-3 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg font-medium transition-colors flex items-center justify-center gap-1 shadow-sm"
+                                            className="flex-1 min-w-[120px] px-3 py-2.5 text-sm bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80 rounded-lg font-medium transition-colors flex items-center justify-center gap-1.5 shadow-sm touch-manipulation"
                                         >
-                                            <CarIcon size={14} /> Start Rental
+                                            <CarIcon size={16} /> Start Rental
                                         </button>
                                         <button
                                             onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'cancelled')}
-                                            className="px-3 py-2 text-sm bg-red-50 text-red-700 hover:bg-red-100 rounded-lg font-medium transition-colors flex items-center gap-1"
+                                            className="px-3 py-2.5 text-sm bg-red-50 text-red-700 hover:bg-red-100 active:bg-red-200 rounded-lg font-medium transition-colors flex items-center gap-1.5 touch-manipulation"
                                         >
-                                            <XCircle size={14} /> Cancel
+                                            <XCircle size={16} /> Cancel
                                         </button>
                                     </>
                                 )}
@@ -512,18 +518,18 @@ const Rentals = () => {
                                         setSelectedRentalForDetails(rental);
                                         setDetailsModalOpen(true);
                                     }}
-                                    className="flex-1 min-w-[100px] px-3 py-2 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-medium transition-colors flex items-center justify-center gap-1"
+                                    className="flex-1 min-w-[90px] px-3 py-2.5 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 active:bg-blue-200 rounded-lg font-medium transition-colors flex items-center justify-center gap-1.5 touch-manipulation"
                                 >
-                                    <Eye size={14} /> View
+                                    <Eye size={16} /> View
                                 </button>
                                 <button
                                     onClick={() => {
                                         setSelectedRentalForInvoice(rental);
                                         setInvoiceModalOpen(true);
                                     }}
-                                    className="flex-1 min-w-[100px] px-3 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-lg font-medium transition-colors flex items-center justify-center gap-1"
+                                    className="flex-1 min-w-[90px] px-3 py-2.5 text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80 active:bg-secondary/70 rounded-lg font-medium transition-colors flex items-center justify-center gap-1.5 touch-manipulation"
                                 >
-                                    <FileText size={14} /> Invoice
+                                    <FileText size={16} /> Invoice
                                 </button>
 
                                 {/* Active Rental Actions - Charge, Complete, Cancel */}
@@ -534,21 +540,21 @@ const Rentals = () => {
                                                 setSelectedRentalForCharge(rental);
                                                 setChargeModalOpen(true);
                                             }}
-                                            className="px-3 py-2 text-sm bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-lg font-medium transition-colors"
+                                            className="px-3 py-2.5 text-sm bg-amber-100 text-amber-700 hover:bg-amber-200 active:bg-amber-300 rounded-lg font-medium transition-colors touch-manipulation"
                                         >
                                             + Charge
                                         </button>
                                         <button
                                             onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'completed')}
-                                            className="px-3 py-2 text-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg font-medium transition-colors flex items-center gap-1"
+                                            className="px-3 py-2.5 text-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100 active:bg-emerald-200 rounded-lg font-medium transition-colors flex items-center gap-1.5 touch-manipulation"
                                         >
-                                            <CheckCircle size={14} /> Complete
+                                            <CheckCircle size={16} /> Complete
                                         </button>
                                         <button
                                             onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'cancelled')}
-                                            className="px-3 py-2 text-sm bg-red-50 text-red-700 hover:bg-red-100 rounded-lg font-medium transition-colors flex items-center gap-1"
+                                            className="px-3 py-2.5 text-sm bg-red-50 text-red-700 hover:bg-red-100 active:bg-red-200 rounded-lg font-medium transition-colors flex items-center gap-1.5 touch-manipulation"
                                         >
-                                            <XCircle size={14} /> Cancel
+                                            <XCircle size={16} /> Cancel
                                         </button>
                                     </>
                                 )}

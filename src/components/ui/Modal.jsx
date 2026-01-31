@@ -53,20 +53,25 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
                 role="dialog"
                 aria-modal="true"
             >
+                {/* Mobile Drag Handle - Visual indicator that modal can be swiped */}
+                <div className="md:hidden flex justify-center pt-2 pb-1">
+                    <div className="w-10 h-1 bg-muted-foreground/30 rounded-full"></div>
+                </div>
+
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 md:p-6 border-b border-border shrink-0">
+                <div className="flex items-center justify-between px-4 py-3 md:p-6 border-b border-border shrink-0">
                     <h3 className="text-lg md:text-xl font-semibold text-foreground">{title}</h3>
                     <button
                         onClick={onClose}
-                        className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-md hover:bg-secondary"
+                        className="text-muted-foreground hover:text-foreground active:bg-secondary transition-colors p-2 rounded-md hover:bg-secondary touch-manipulation"
                         aria-label="Close modal"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
-                {/* Body */}
-                <div className="p-4 md:p-6 overflow-y-auto custom-scrollbar flex-1">
+                {/* Body - simple scrollable container */}
+                <div className="flex-1 overflow-y-auto overscroll-contain p-4 md:p-6">
                     {children}
                 </div>
             </div>
