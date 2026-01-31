@@ -61,7 +61,7 @@ const Header = ({ toggleMobileMenu }) => {
 
                     {/* Notification Dropdown */}
                     {showDropdown && (
-                        <div className="absolute right-0 mt-2 w-80 bg-popover rounded-md shadow-md border border-border overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-popover rounded-md shadow-md border border-border overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
                             <div className="p-3 border-b border-border flex justify-between items-center bg-muted/50">
                                 <h3 className="font-semibold text-sm text-foreground">Notifications</h3>
                                 {notifications.length > 0 && (

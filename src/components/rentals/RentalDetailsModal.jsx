@@ -30,16 +30,16 @@ const DocumentCard = ({ title, number, frontUrl, backUrl, onView }) => (
                         <img
                             src={getImageUrl(frontUrl)}
                             alt={`${title} Front`}
-                            className="w-full h-20 object-cover rounded-md border border-border"
+                            className="w-full h-24 md:h-20 object-cover rounded-md border border-border"
                         />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/50 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
                             <span className="text-white text-[10px] flex items-center gap-1">
                                 <ExternalLink size={10} /> View
                             </span>
                         </div>
                     </div>
                 ) : (
-                    <div className="w-full h-20 bg-muted rounded-md border border-dashed border-border flex items-center justify-center mt-1">
+                    <div className="w-full h-24 md:h-20 bg-muted rounded-md border border-dashed border-border flex items-center justify-center mt-1">
                         <span className="text-[9px] text-muted-foreground">No photo</span>
                     </div>
                 )}
@@ -55,16 +55,16 @@ const DocumentCard = ({ title, number, frontUrl, backUrl, onView }) => (
                         <img
                             src={getImageUrl(backUrl)}
                             alt={`${title} Back`}
-                            className="w-full h-20 object-cover rounded-md border border-border"
+                            className="w-full h-24 md:h-20 object-cover rounded-md border border-border"
                         />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/50 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
                             <span className="text-white text-[10px] flex items-center gap-1">
                                 <ExternalLink size={10} /> View
                             </span>
                         </div>
                     </div>
                 ) : (
-                    <div className="w-full h-20 bg-muted rounded-md border border-dashed border-border flex items-center justify-center mt-1">
+                    <div className="w-full h-24 md:h-20 bg-muted rounded-md border border-dashed border-border flex items-center justify-center mt-1">
                         <span className="text-[9px] text-muted-foreground">No photo</span>
                     </div>
                 )}

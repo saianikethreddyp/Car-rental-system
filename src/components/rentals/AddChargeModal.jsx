@@ -96,8 +96,8 @@ const AddChargeModal = ({ isOpen, onClose, onAdd, rental, isLoading }) => {
                     required
                 />
 
-                {/* Amount & Payment Method */}
-                <div className="grid grid-cols-2 gap-3">
+                {/* Amount & Payment Method - responsive grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <Input
                             label={chargeData.type === 'discount' ? 'Discount (₹)' : 'Amount (₹)'}

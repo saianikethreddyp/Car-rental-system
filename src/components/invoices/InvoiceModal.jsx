@@ -79,50 +79,58 @@ const InvoiceModal = ({ isOpen, onClose, rental }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
                 onClick={onClose}
             ></div>
 
-            {/* Modal Content */}
-            <div className="relative w-full max-w-3xl bg-white rounded-xl shadow-2xl flex flex-col max-h-[90vh] animate-scale-in">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
+            {/* Modal Content - slides up on mobile, scales in on desktop */}
+            <div className="relative w-full md:max-w-3xl bg-white rounded-t-2xl md:rounded-xl shadow-2xl flex flex-col max-h-[95vh] md:max-h-[90vh] animate-slide-up md:animate-scale-in">
+                {/* Mobile Drag Handle */}
+                <div className="md:hidden flex justify-center pt-2 pb-1">
+                    <div className="w-10 h-1 bg-gray-300 rounded-full"></div>
+                </div>
+
+                {/* Header - responsive layout */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border-b border-gray-200 bg-gray-50 md:rounded-t-xl gap-3">
                     <div>
                         <h3 className="text-lg font-semibold text-gray-900">Invoice Preview</h3>
                         <p className="text-sm text-gray-500">{invoiceNumber}</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={handlePrint}
-                            className="gap-2"
+                            className="gap-2 flex-1 sm:flex-none touch-manipulation"
                         >
                             <Printer size={16} />
-                            Print
+                            <span className="hidden sm:inline">Print</span>
+                            <span className="sm:hidden">Print</span>
                         </Button>
                         <Button
                             size="sm"
                             onClick={handleDownload}
-                            className="gap-2"
+                            className="gap-2 flex-1 sm:flex-none touch-manipulation"
                         >
                             <Download size={16} />
-                            Download PDF
+                            <span className="hidden sm:inline">Download PDF</span>
+                            <span className="sm:hidden">PDF</span>
                         </Button>
                         <button
                             onClick={onClose}
-                            className="text-gray-500 hover:text-gray-700 transition-colors p-1.5 rounded-md hover:bg-gray-200 ml-2"
+                            className="text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-md hover:bg-gray-200 touch-manipulation"
+                            aria-label="Close"
                         >
                             <X size={20} />
                         </button>
                     </div>
                 </div>
 
-                {/* Invoice Content */}
-                <div className="p-6 overflow-y-auto bg-gray-100" ref={invoiceRef}>
+                {/* Invoice Content - scrollable */}
+                <div className="flex-1 p-4 md:p-6 overflow-y-auto overscroll-contain bg-gray-100" ref={invoiceRef}>
                     <div className="shadow-lg rounded-lg overflow-hidden">
                         <InvoiceTemplate rental={rental} invoiceNumber={invoiceNumber} />
                     </div>

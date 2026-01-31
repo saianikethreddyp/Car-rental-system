@@ -109,48 +109,53 @@ export const FleetCalendar = ({ selectedDate }) => {
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="border-b border-border">
-                            <th className="text-left py-2 pr-4 font-medium text-muted-foreground min-w-[120px]">Vehicle</th>
-                            {days.map(day => (
-                                <th key={day.date} className="text-center py-2 px-1 font-medium text-muted-foreground">
-                                    <div className="text-xs">{day.dayName}</div>
-                                    <div className="text-foreground">{day.dayNum}</div>
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {cars.slice(0, 5).map(car => (
-                            <tr key={car.id} className="border-b border-border/50 hover:bg-muted/30">
-                                <td className="py-2 pr-4">
-                                    <div className="font-medium text-foreground truncate max-w-[120px]">
-                                        {car.make} {car.model}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">{car.license_plate}</div>
-                                </td>
-                                {days.map(day => {
-                                    const status = getCarStatus(car, day.date);
-                                    return (
-                                        <td key={day.date} className="py-2 px-1">
-                                            <div className={`w-8 h-8 mx-auto rounded border ${statusColors[status]}`}></div>
-                                        </td>
-                                    );
-                                })}
+            {/* Scrollable table with fade indicator */}
+            <div className="relative">
+                <div className="overflow-x-auto scrollbar-hide">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="border-b border-border">
+                                <th className="text-left py-2 pr-4 font-medium text-muted-foreground min-w-[120px] sticky left-0 bg-card z-10">Vehicle</th>
+                                {days.map(day => (
+                                    <th key={day.date} className="text-center py-2 px-1 font-medium text-muted-foreground min-w-[44px]">
+                                        <div className="text-xs">{day.dayName}</div>
+                                        <div className="text-foreground">{day.dayNum}</div>
+                                    </th>
+                                ))}
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-                {cars.length > 5 && (
-                    <p className="text-xs text-muted-foreground text-center mt-2">
-                        +{cars.length - 5} more vehicles
-                    </p>
-                )}
-                {cars.length === 0 && (
-                    <p className="text-center text-muted-foreground py-4">No vehicles in fleet</p>
-                )}
+                        </thead>
+                        <tbody>
+                            {cars.slice(0, 5).map(car => (
+                                <tr key={car.id} className="border-b border-border/50 hover:bg-muted/30">
+                                    <td className="py-2 pr-4 sticky left-0 bg-card z-10">
+                                        <div className="font-medium text-foreground truncate max-w-[120px]">
+                                            {car.make} {car.model}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">{car.license_plate}</div>
+                                    </td>
+                                    {days.map(day => {
+                                        const status = getCarStatus(car, day.date);
+                                        return (
+                                            <td key={day.date} className="py-2 px-1">
+                                                <div className={`w-8 h-8 mx-auto rounded border ${statusColors[status]}`}></div>
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    {cars.length > 5 && (
+                        <p className="text-xs text-muted-foreground text-center mt-2">
+                            +{cars.length - 5} more vehicles
+                        </p>
+                    )}
+                    {cars.length === 0 && (
+                        <p className="text-center text-muted-foreground py-4">No vehicles in fleet</p>
+                    )}
+                </div>
+                {/* Scroll fade indicator - right side */}
+                <div className="md:hidden absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent pointer-events-none"></div>
             </div>
         </Card>
     );
