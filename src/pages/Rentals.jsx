@@ -82,6 +82,42 @@ const Rentals = () => {
         car_photos: []
     });
 
+    // Return Completion State
+    const [completionModalOpen, setCompletionModalOpen] = useState(false);
+    const [selectedRentalForCompletion, setSelectedRentalForCompletion] = useState(null);
+    const [completionData, setCompletionData] = useState({ date: '', time: '' });
+
+    const openCompletionModal = (rental) => {
+        setSelectedRentalForCompletion(rental);
+        const now = new Date();
+        setCompletionData({
+            date: now.toISOString().split('T')[0],
+            time: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+        });
+        setCompletionModalOpen(true);
+    };
+
+    const handleConfirmCompletion = async (e) => {
+        e.preventDefault();
+        if (!selectedRentalForCompletion) return;
+
+        try {
+            await handleStatusUpdate(
+                selectedRentalForCompletion._id,
+                selectedRentalForCompletion.car_id?._id,
+                'completed',
+                {
+                    actual_return_date: completionData.date,
+                    actual_return_time: completionData.time
+                }
+            );
+            setCompletionModalOpen(false);
+            setSelectedRentalForCompletion(null);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     useEffect(() => {
         fetchRentals(1);
         fetchAvailableCars();
@@ -284,9 +320,9 @@ const Rentals = () => {
         toast.success(`Calculated: ₹${rate} x ${days} days = ₹${total}`);
     };
 
-    const handleStatusUpdate = async (rentalId, carId, newStatus) => {
+    const handleStatusUpdate = async (rentalId, carId, newStatus, extraUpdates = {}) => {
         try {
-            await rentalsApi.update(rentalId, { status: newStatus });
+            await rentalsApi.update(rentalId, { status: newStatus, ...extraUpdates });
             // Backend automatically updates car availability based on status change
 
             fetchRentals();
@@ -382,7 +418,7 @@ const Rentals = () => {
                 }}>
                     New Booking
                 </Button>
-            </div> // Fixed closing tag mismatch if any
+            </div>
 
             {/* Note about Pending Rentals */}
             {rentals.some(r => r.status === 'pending') && (
@@ -545,7 +581,7 @@ const Rentals = () => {
                                             + Charge
                                         </button>
                                         <button
-                                            onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'completed')}
+                                            onClick={() => openCompletionModal(rental)}
                                             className="px-3 py-2.5 text-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100 active:bg-emerald-200 rounded-lg font-medium transition-colors flex items-center gap-1.5 touch-manipulation"
                                         >
                                             <CheckCircle size={16} /> Complete
@@ -700,7 +736,7 @@ const Rentals = () => {
                                                             + Charge
                                                         </button>
                                                         <button
-                                                            onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'completed')}
+                                                            onClick={() => openCompletionModal(rental)}
                                                             className="text-emerald-600 hover:text-emerald-700 p-1.5 hover:bg-emerald-50 rounded-md transition-colors"
                                                             title="Complete Rental"
                                                         >
@@ -1094,6 +1130,62 @@ const Rentals = () => {
                 onAdd={handleAddCharge}
                 isLoading={addingCharge}
             />
+
+            {/* Complete Rental Modal */}
+            <Modal
+                isOpen={completionModalOpen}
+                onClose={() => setCompletionModalOpen(false)}
+                title="Complete Rental & Confirm Return"
+                size="md"
+            >
+                <div>
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800 mb-4 flex gap-2">
+                        <CheckCircle className="shrink-0" size={18} />
+                        <p>Completing this rental will mark the car as <strong>Available</strong>.</p>
+                    </div>
+
+                    <form onSubmit={handleConfirmCompletion} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Actual Return Date</label>
+                                <Input
+                                    type="date"
+                                    value={completionData.date}
+                                    onChange={(e) => setCompletionData(prev => ({ ...prev, date: e.target.value }))}
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Actual Return Time</label>
+                                <Input
+                                    type="time"
+                                    value={completionData.time}
+                                    onChange={(e) => setCompletionData(prev => ({ ...prev, time: e.target.value }))}
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="pt-2 flex gap-3">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setCompletionModalOpen(false)}
+                                className="flex-1"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                            >
+                                Confirm Return
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            </Modal>
         </div >
     );
 };

@@ -9,11 +9,13 @@ const InvoiceTemplate = ({ rental, invoiceNumber }) => {
 
     const startDate = formatDate(rental.start_date);
 
-    const endDate = formatDate(rental.end_date);
+    // Use Actual Return Date if available, otherwise Planned End Date
+    const displayEndDate = rental.actual_return_date || rental.end_date;
+    const endDate = formatDate(displayEndDate);
 
     // Calculate rental days
     const start = new Date(rental.start_date);
-    const end = new Date(rental.end_date);
+    const end = new Date(displayEndDate);
     const diffTime = Math.abs(end - start);
     const rentalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
 
@@ -155,8 +157,8 @@ const InvoiceTemplate = ({ rental, invoiceNumber }) => {
                                 {(rental.start_time || rental.end_time) && (
                                     <span className="ml-2">
                                         {rental.start_time && `${formatTime(rental.start_time)}`}
-                                        {rental.start_time && rental.end_time && ' - '}
-                                        {rental.end_time && formatTime(rental.end_time)}
+                                        {(rental.start_time && (rental.actual_return_time || rental.end_time)) && ' - '}
+                                        {formatTime(rental.actual_return_time || rental.end_time)}
                                     </span>
                                 )}
                             </p>
