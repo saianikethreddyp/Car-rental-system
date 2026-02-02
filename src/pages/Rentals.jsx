@@ -118,6 +118,43 @@ const Rentals = () => {
         }
     };
 
+    // Cancellation Modal State
+    const [cancellationModalOpen, setCancellationModalOpen] = useState(false);
+    const [selectedRentalForCancellation, setSelectedRentalForCancellation] = useState(null);
+    const [cancellationData, setCancellationData] = useState({ operator: '', reason: '' });
+
+    const openCancellationModal = (rental) => {
+        setSelectedRentalForCancellation(rental);
+        setCancellationData({ operator: '', reason: '' });
+        setCancellationModalOpen(true);
+    };
+
+    const handleConfirmCancellation = async (e) => {
+        e.preventDefault();
+        if (!selectedRentalForCancellation) return;
+        if (!cancellationData.operator.trim() || !cancellationData.reason.trim()) {
+            alert('Please fill in both operator name and reason');
+            return;
+        }
+
+        try {
+            await handleStatusUpdate(
+                selectedRentalForCancellation._id,
+                selectedRentalForCancellation.car_id?._id,
+                'cancelled',
+                {
+                    cancelled_by: cancellationData.operator,
+                    cancellation_reason: cancellationData.reason,
+                    cancelled_at: new Date().toISOString()
+                }
+            );
+            setCancellationModalOpen(false);
+            setSelectedRentalForCancellation(null);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     useEffect(() => {
         fetchRentals(1);
         fetchAvailableCars();
@@ -528,6 +565,18 @@ const Rentals = () => {
                                 </div>
                             </div>
 
+                            {/* Cancellation Info - Only for cancelled rentals */}
+                            {rental.status === 'cancelled' && rental.cancelled_by && (
+                                <div className="pt-2 border-t border-border">
+                                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm">
+                                        <p className="text-red-700 font-medium">Cancelled by: {rental.cancelled_by}</p>
+                                        {rental.cancellation_reason && (
+                                            <p className="text-red-600 text-xs mt-1">Reason: {rental.cancellation_reason}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Actions - improved touch targets for mobile */}
                             <div className="pt-2 border-t border-border flex flex-wrap gap-2">
                                 {/* Pre-Booking Actions - Start Rental & Cancel */}
@@ -540,7 +589,7 @@ const Rentals = () => {
                                             <CarIcon size={16} /> Start Rental
                                         </button>
                                         <button
-                                            onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'cancelled')}
+                                            onClick={() => openCancellationModal(rental)}
                                             className="px-3 py-2.5 text-sm bg-red-50 text-red-700 hover:bg-red-100 active:bg-red-200 rounded-lg font-medium transition-colors flex items-center gap-1.5 touch-manipulation"
                                         >
                                             <XCircle size={16} /> Cancel
@@ -587,7 +636,7 @@ const Rentals = () => {
                                             <CheckCircle size={16} /> Complete
                                         </button>
                                         <button
-                                            onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'cancelled')}
+                                            onClick={() => openCancellationModal(rental)}
                                             className="px-3 py-2.5 text-sm bg-red-50 text-red-700 hover:bg-red-100 active:bg-red-200 rounded-lg font-medium transition-colors flex items-center gap-1.5 touch-manipulation"
                                         >
                                             <XCircle size={16} /> Cancel
@@ -671,13 +720,21 @@ const Rentals = () => {
                                         </td>
                                         <td className="p-4 font-semibold text-foreground text-sm">{formatCurrency(rental.total_amount)}</td>
                                         <td className="p-4">
-                                            <Badge variant={
-                                                rental.status === 'active' ? 'success' :
-                                                    rental.status === 'completed' ? 'secondary' :
-                                                        rental.status === 'pending' ? 'default' : 'destructive'
-                                            } className="shadow-none">
-                                                {rental.status}
-                                            </Badge>
+                                            <div className="flex flex-col gap-1">
+                                                <Badge variant={
+                                                    rental.status === 'active' ? 'success' :
+                                                        rental.status === 'completed' ? 'secondary' :
+                                                            rental.status === 'pending' ? 'default' : 'destructive'
+                                                } className="shadow-none">
+                                                    {rental.status}
+                                                </Badge>
+                                                {/* Show cancellation info for cancelled rentals */}
+                                                {rental.status === 'cancelled' && rental.cancelled_by && (
+                                                    <span className="text-[10px] text-red-600" title={rental.cancellation_reason || ''}>
+                                                        by {rental.cancelled_by}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="p-4">
                                             <div className="flex gap-2">
@@ -694,7 +751,7 @@ const Rentals = () => {
                                                 {/* Allow Cancel for Pending Rentals too */}
                                                 {rental.status === 'pending' && (
                                                     <button
-                                                        onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'cancelled')}
+                                                        onClick={() => openCancellationModal(rental)}
                                                         className="text-destructive hover:text-destructive/80 p-1.5 hover:bg-destructive/10 rounded-md transition-colors"
                                                         title="Cancel Booking"
                                                     >
@@ -743,7 +800,7 @@ const Rentals = () => {
                                                             <CheckCircle size={16} />
                                                         </button>
                                                         <button
-                                                            onClick={() => handleStatusUpdate(rental._id, rental.car_id?._id, 'cancelled')}
+                                                            onClick={() => openCancellationModal(rental)}
                                                             className="text-destructive hover:text-destructive/80 p-1.5 hover:bg-destructive/10 rounded-md transition-colors"
                                                             title="Cancel Rental"
                                                         >
@@ -1181,6 +1238,63 @@ const Rentals = () => {
                                 className="flex-1 bg-emerald-600 hover:bg-emerald-700"
                             >
                                 Confirm Return
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            </Modal>
+
+            {/* Cancel Rental Modal */}
+            <Modal
+                isOpen={cancellationModalOpen}
+                onClose={() => setCancellationModalOpen(false)}
+                title="Cancel Rental"
+                size="md"
+            >
+                <div>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 mb-4 flex gap-2">
+                        <XCircle className="shrink-0" size={18} />
+                        <p>Cancelling this rental will mark the car as <strong>Available</strong> and void any pending payments.</p>
+                    </div>
+
+                    <form onSubmit={handleConfirmCancellation} className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Operator Name *</label>
+                            <Input
+                                type="text"
+                                placeholder="Enter your name"
+                                value={cancellationData.operator}
+                                onChange={(e) => setCancellationData(prev => ({ ...prev, operator: e.target.value }))}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Cancellation *</label>
+                            <textarea
+                                placeholder="Enter the reason for cancelling this rental..."
+                                value={cancellationData.reason}
+                                onChange={(e) => setCancellationData(prev => ({ ...prev, reason: e.target.value }))}
+                                required
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                            />
+                        </div>
+
+                        <div className="pt-2 flex gap-3">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setCancellationModalOpen(false)}
+                                className="flex-1"
+                            >
+                                Go Back
+                            </Button>
+                            <Button
+                                type="submit"
+                                variant="destructive"
+                                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                            >
+                                Confirm Cancellation
                             </Button>
                         </div>
                     </form>

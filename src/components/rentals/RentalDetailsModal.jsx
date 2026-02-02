@@ -147,6 +147,36 @@ const RentalDetailsModal = ({ isOpen, onClose, rental, formatCurrency, onStatusU
                     </div>
                 </div>
 
+                {/* Cancellation Info - Only shown for cancelled rentals */}
+                {rental.status === 'cancelled' && (rental.cancelled_by || rental.cancellation_reason) && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
+                        <h4 className="font-medium text-red-800 text-sm flex items-center gap-2">
+                            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                            Cancellation Details
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                            {rental.cancelled_by && (
+                                <div>
+                                    <span className="text-red-600 font-medium">Cancelled By:</span>
+                                    <p className="text-red-800">{rental.cancelled_by}</p>
+                                </div>
+                            )}
+                            {rental.cancelled_at && (
+                                <div>
+                                    <span className="text-red-600 font-medium">Cancelled On:</span>
+                                    <p className="text-red-800">{formatDate(rental.cancelled_at)}</p>
+                                </div>
+                            )}
+                            {rental.cancellation_reason && (
+                                <div className="md:col-span-3">
+                                    <span className="text-red-600 font-medium">Reason:</span>
+                                    <p className="text-red-800">{rental.cancellation_reason}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Vehicle & Trip Info */}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
