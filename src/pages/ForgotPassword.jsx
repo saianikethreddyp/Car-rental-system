@@ -35,7 +35,7 @@ const ForgotPassword = () => {
             <div className="max-w-md w-full bg-card/50 backdrop-blur-xl rounded-2xl shadow-xl relative z-10 p-8 border border-border">
                 <div className="text-center mb-10">
                     <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/20 transform -rotate-6">
-                        <span className="text-3xl font-bold text-primary-foreground">D</span>
+                        <span className="text-3xl font-bold text-primary-foreground">N</span>
                     </div>
                     <h1 className="text-3xl font-bold text-foreground mb-2">Forgot Password</h1>
                     <p className="text-muted-foreground">
