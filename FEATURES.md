@@ -1,4 +1,4 @@
-# Dhanya CRM - Feature Documentation
+# Niyam - Feature Documentation
 
 A comprehensive Car Rental Management System built with React and Supabase.
 

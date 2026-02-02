@@ -44,10 +44,10 @@ const Sidebar = ({ isMobileMenuOpen, closeMobileMenu }) => {
                 <div className="h-16 flex items-center justify-between px-6 border-b border-border">
                     <div className="flex items-center gap-2">
                         <div className="h-6 w-6 rounded bg-primary flex items-center justify-center">
-                            <span className="text-primary-foreground font-bold text-xs">D</span>
+                            <span className="text-primary-foreground font-bold text-xs">N</span>
                         </div>
                         <h1 className="text-sm font-semibold text-foreground tracking-tight">
-                            Dhanya CRM
+                            Niyam
                         </h1>
                     </div>
 

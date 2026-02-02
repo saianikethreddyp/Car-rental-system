@@ -43,7 +43,7 @@ const Settings = () => {
 
     // Business Profile State
     const [businessProfile, setBusinessProfile] = useState({
-        companyName: settings.business?.companyName || 'Dhanya CRM',
+        companyName: settings.business?.companyName || 'Niyam',
         address: settings.business?.address || '',
         phone: settings.business?.phone || '',
         email: settings.business?.email || '',

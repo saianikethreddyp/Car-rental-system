@@ -22,7 +22,7 @@ export default function SupportButton() {
     ];
 
     const openWhatsApp = (number) => {
-        const message = encodeURIComponent('Hi, I need help with the Dhanya Car Rentals system.');
+        const message = encodeURIComponent('Hi, I need help with the Niyam Car Rentals system.');
         window.open(`https://wa.me/${number}?text=${message}`, '_blank');
         setIsOpen(false);
     };
@@ -65,8 +65,8 @@ export default function SupportButton() {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 ${isOpen
-                        ? 'bg-gray-600 hover:bg-gray-700'
-                        : 'bg-green-500 hover:bg-green-600'
+                    ? 'bg-gray-600 hover:bg-gray-700'
+                    : 'bg-green-500 hover:bg-green-600'
                     }`}
                 aria-label={isOpen ? 'Close support menu' : 'Open support menu'}
             >

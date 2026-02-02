@@ -56,7 +56,7 @@ const InvoiceModal = ({ isOpen, onClose, rental }) => {
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Invoice ${invoiceNumber} - Dhanya CRM</title>
+                <title>Invoice ${invoiceNumber} - Niyam</title>
                 <script src="https://cdn.tailwindcss.com"></script>
                 <style>
                     @media print {

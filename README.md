@@ -1,4 +1,4 @@
-# Dhanya Car Rentals - Admin Portal
+# Niyam Car Rentals - Admin Portal
 
 A modern, responsive admin dashboard for managing car rentals, fleet, customers, and payments.
 
@@ -215,4 +215,4 @@ const allowedOrigins = [
 
 ## 📄 License
 
-Proprietary - Dhanya Car Rentals
+Proprietary - Niyam Car Rentals

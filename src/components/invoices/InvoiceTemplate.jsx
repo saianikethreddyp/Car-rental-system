@@ -96,7 +96,7 @@ const InvoiceTemplate = ({ rental, invoiceNumber }) => {
                         )}
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">
-                                {settings.business?.companyName || 'Dhanya CRM'}
+                                {settings.business?.companyName || 'Niyam'}
                             </h1>
                             <p className="text-sm text-gray-500">Car Rental Services</p>
                         </div>

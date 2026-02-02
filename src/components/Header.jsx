@@ -121,7 +121,7 @@ const Header = ({ toggleMobileMenu }) => {
                 <div className="flex items-center gap-3 pl-4 border-l border-border">
                     <div className="text-right hidden sm:block">
                         <p className="text-sm font-medium text-foreground leading-none">{user?.user_metadata?.full_name || 'Admin User'}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{user?.email || 'admin@dhanya.com'}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{user?.email || 'admin@niyam.com'}</p>
                     </div>
                     <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shadow ring-offset-background hover:opacity-90 transition-opacity cursor-pointer">
                         {user?.user_metadata?.full_name ? user.user_metadata.full_name.charAt(0).toUpperCase() : 'A'}

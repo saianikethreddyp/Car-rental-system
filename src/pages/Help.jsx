@@ -151,7 +151,7 @@ const Help = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-foreground">Help & Documentation</h1>
-                    <p className="text-muted-foreground mt-1">Learn how to use Dhanya CRM effectively</p>
+                    <p className="text-muted-foreground mt-1">Learn how to use Niyam effectively</p>
                 </div>
                 <a
                     href="https://developer-portal-saianikethreddyp.vercel.app"
@@ -179,7 +179,7 @@ const Help = () => {
                     </div>
                     <div className="flex gap-3">
                         <a
-                            href="https://wa.me/918328417230?text=Hi,%20I%20need%20help%20with%20the%20Dhanya%20Car%20Rentals%20system."
+                            href="https://wa.me/918328417230?text=Hi,%20I%20need%20help%20with%20the%20Niyam%20Car%20Rentals%20system."
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
