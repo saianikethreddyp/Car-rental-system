@@ -219,42 +219,51 @@ const SingleSideUpload = ({
 
             {/* Preview Mode */}
             {preview && !cameraActive && (
-                <div className="relative rounded-lg overflow-hidden border border-border bg-muted aspect-[4/3]">
+                <div className="group relative rounded-lg overflow-hidden border border-border bg-muted aspect-[4/3]">
+                    {/* Main Image - Clickable to View */}
                     <img
                         src={getImageUrl(preview)}
                         alt={`${docType} ${side}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover cursor-pointer"
+                        onClick={() => window.open(getImageUrl(preview), '_blank')}
                     />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                        <button
-                            type="button"
-                            onClick={() => window.open(getImageUrl(preview), '_blank')}
-                            /* ... */
-                            className="p-1.5 bg-white/90 rounded-md text-gray-700 hover:bg-white text-xs"
-                            title="Open Image"
-                        >
-                            <ImageIcon size={12} />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setPreview(null);
-                                startCamera();
-                            }}
-                            className="p-1.5 bg-white/90 rounded-md text-gray-700 hover:bg-white text-xs"
-                        >
-                            <RefreshCw size={12} />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={removeDocument}
-                            className="p-1.5 bg-red-500/90 rounded-md text-white hover:bg-red-500 text-xs"
-                        >
-                            <X size={12} />
-                        </button>
+
+                    {/* Status Indicator (Always Visible) */}
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-white rounded-full p-1 shadow-sm z-10 pointer-events-none">
+                        <Check size={12} />
                     </div>
-                    <div className="absolute top-1 right-1 bg-emerald-500 text-white rounded-full p-0.5">
-                        <Check size={10} />
+
+                    {/* Actions Toolbar (Always Visible at Bottom for Touch Devices) */}
+                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-end justify-end gap-3 pt-8">
+                        {/* View Button */}
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); window.open(getImageUrl(preview), '_blank'); }}
+                            className="p-2 bg-white/20 hover:bg-white/40 text-white backdrop-blur-md rounded-full transition-all shadow-sm active:scale-95"
+                            title="View Fullscreen"
+                        >
+                            <ImageIcon size={16} />
+                        </button>
+
+                        {/* Retake Button */}
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setPreview(null); startCamera(); }}
+                            className="p-2 bg-white/20 hover:bg-white/40 text-white backdrop-blur-md rounded-full transition-all shadow-sm active:scale-95"
+                            title="Retake Photo"
+                        >
+                            <RefreshCw size={16} />
+                        </button>
+
+                        {/* Remove Button */}
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); removeDocument(); }}
+                            className="p-2 bg-red-500/80 hover:bg-red-600/90 text-white backdrop-blur-md rounded-full transition-all shadow-sm active:scale-95"
+                            title="Remove"
+                        >
+                            <X size={16} />
+                        </button>
                     </div>
                 </div>
             )}
