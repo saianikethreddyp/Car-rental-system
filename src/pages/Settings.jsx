@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthProvider';
 import { useSettings } from '../context/SettingsContext';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { rentalsApi, customersApi, carsApi, uploadApi, sessionsApi } from '../api/client';
+import { rentalsApi, customersApi, carsApi, uploadApi, sessionsApi, authApi } from '../api/client';
 import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
 import { Camera, Image as ImageIcon, X, Smartphone, Monitor, Trash2, LogOut } from 'lucide-react';
@@ -103,9 +103,9 @@ const Settings = () => {
     const handleSaveProfile = async () => {
         try {
             setLoading(true);
-            // Backend profile update API
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
-            toast.success('Profile updated successfully! (Mock)');
+            const updatedUser = await authApi.updateProfile(profile);
+            toast.success('Profile updated successfully!');
+            // Ideally update the global user context here if possible, or trigger a reload
         } catch (error) {
             toast.error(error.message);
         } finally {
@@ -127,8 +127,8 @@ const Settings = () => {
         try {
             setPasswordLoading(true);
             // Backend password update API
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
-            toast.success('Password updated successfully! (Mock)');
+            await authApi.updatePassword({ password: passwords.newPassword });
+            toast.success('Password updated successfully!');
             setPasswords({ newPassword: '', confirmPassword: '' });
         } catch (error) {
             toast.error(error.message);

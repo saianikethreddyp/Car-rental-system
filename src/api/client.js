@@ -119,4 +119,9 @@ export const sessionsApi = {
     revokeAll: () => api.delete('/auth/sessions'),
 };
 
+export const authApi = {
+    updatePassword: (data) => api.put('/auth/update-password', data),
+    updateProfile: (data) => api.put('/auth/update-profile', data),
+};
+
 export default api;
