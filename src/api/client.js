@@ -3,25 +3,12 @@ import axios from 'axios';
 
 // Create axios instance
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'https://backend-car-rental-tesg.onrender.com/api',
+    baseURL: import.meta.env.VITE_API_URL,
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json'
     }
 });
-
-// Request interceptor - Add auth token to all requests
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
 
 // Response interceptor for error handling
 api.interceptors.response.use(
@@ -113,15 +100,22 @@ export const uploadApi = {
     }
 };
 
-export const sessionsApi = {
-    getAll: () => api.get('/auth/sessions'),
-    revoke: (sessionId) => api.delete(`/auth/sessions/${sessionId}`),
-    revokeAll: () => api.delete('/auth/sessions'),
-};
+
 
 export const authApi = {
     updatePassword: (data) => api.put('/auth/update-password', data),
     updateProfile: (data) => api.put('/auth/update-profile', data),
+};
+
+export const settingsApi = {
+    get: () => api.get('/settings'),
+    update: (data) => api.put('/settings', data),
+};
+
+export const invoicesApi = {
+    getAll: () => api.get('/invoices'),
+    getById: (id) => api.get(`/invoices/${id}`),
+    generate: (rentalId) => api.post('/invoices/generate', { rentalId }),
 };
 
 export default api;
