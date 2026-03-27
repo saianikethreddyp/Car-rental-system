@@ -39,7 +39,7 @@ A modern, responsive admin dashboard for managing car rentals, fleet, customers,
 - **Framework:** React 18 + Vite
 - **Styling:** Tailwind CSS
 - **State Management:** React Context
-- **Authentication:** Supabase Auth
+- **Authentication:** JWT Auth
 - **API Client:** Axios
 - **Icons:** Lucide React
 - **Deployment:** Vercel
@@ -50,7 +50,6 @@ A modern, responsive admin dashboard for managing car rentals, fleet, customers,
 
 - Node.js 18+ installed
 - Backend API running (see Backend README)
-- Supabase project configured
 
 ### 1. Clone the Repository
 
@@ -72,10 +71,6 @@ Create a `.env` file in the root directory:
 ```env
 # API Configuration
 VITE_API_URL=https://backend-car-rental-production-a9db.up.railway.app/api
-
-# Supabase Configuration
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 ### 4. Run Development Server
@@ -129,16 +124,12 @@ src/
 
 ## 🔒 Authentication
 
-The portal uses Supabase Auth for authentication:
+The portal uses JWT for authentication:
 
 1. Users log in with email/password
-2. JWT token is stored in Supabase session
+2. JWT token is stored in local storage
 3. API client automatically includes token in requests
 4. Protected routes redirect to login if unauthenticated
-
-### Default Login
-
-Use credentials created in Supabase Auth dashboard.
 
 ## 🚀 Deployment (Vercel)
 
@@ -160,8 +151,6 @@ vercel
 In Vercel dashboard → Project Settings → Environment Variables:
 
 - `VITE_API_URL`
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
 
 ### 3. Auto-Deploy
 

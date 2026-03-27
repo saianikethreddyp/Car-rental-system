@@ -10,18 +10,11 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     const checkUser = async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            setLoading(false);
-            return;
-        }
-
         try {
             const data = await api.get('/auth/me');
             setUser(data);
         } catch (error) {
             console.error('Failed to fetch user:', error);
-            localStorage.removeItem('token');
             setUser(null);
         } finally {
             setLoading(false);
@@ -35,7 +28,6 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         try {
             const data = await api.post('/auth/login', { email, password });
-            localStorage.setItem('token', data.token);
             setUser(data);
             return { success: true };
         } catch (error) {
@@ -50,8 +42,8 @@ export const AuthProvider = ({ children }) => {
     const signup = async (name, email, password) => {
         try {
             const data = await api.post('/auth/signup', { name, email, password });
-            localStorage.setItem('token', data.token);
             setUser(data);
+            console.log(data);
             return { success: true };
         } catch (error) {
             console.error('Signup error:', error);
@@ -62,8 +54,12 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const signOut = () => {
-        localStorage.removeItem('token');
+    const signOut = async () => {
+        try {
+            await api.post('/auth/logout');
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
         setUser(null);
     };
 
