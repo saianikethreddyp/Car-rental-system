@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthProvider';
 import { useSettings } from '../context/SettingsContext';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { rentalsApi, customersApi, carsApi, uploadApi, sessionsApi, authApi } from '../api/client';
+import { rentalsApi, customersApi, carsApi, uploadApi, authApi } from '../api/client';
 import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
 import { Camera, Image as ImageIcon, X, Smartphone, Monitor, Trash2, LogOut } from 'lucide-react';
@@ -26,9 +26,6 @@ const Settings = () => {
     const [passwordLoading, setPasswordLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('general');
     const [exportLoading, setExportLoading] = useState(null);
-    const [sessions, setSessions] = useState([]);
-    const [sessionsLoading, setSessionsLoading] = useState(false);
-
     // Profile State
     const [profile, setProfile] = useState({
         name: '',
@@ -62,33 +59,37 @@ const Settings = () => {
         signature: settings.invoice?.signature || null
     });
 
+    // Sync profile from auth user object
     useEffect(() => {
         if (user) {
             setProfile({
-                name: user.user_metadata?.full_name || '',
+                name: user.name || user.user_metadata?.full_name || '',
                 email: user.email || ''
             });
         }
     }, [user]);
 
-    // Fetch active sessions when Security tab is opened
-    const fetchSessions = async () => {
-        setSessionsLoading(true);
-        try {
-            const data = await sessionsApi.getAll();
-            setSessions(data);
-        } catch (error) {
-            console.error('Failed to fetch sessions:', error);
-        } finally {
-            setSessionsLoading(false);
-        }
-    };
-
+    // Re-sync local form states when settings load from backend
     useEffect(() => {
-        if (activeTab === 'security') {
-            fetchSessions();
+        if (settings.business) {
+            setBusinessProfile({
+                companyName: settings.business.companyName || 'Car Rental Setup',
+                address: settings.business.address || '',
+                phone: settings.business.phone || '',
+                email: settings.business.email || '',
+                logo: settings.business.logo || null,
+                terms: settings.business.terms || ''
+            });
         }
-    }, [activeTab]);
+        if (settings.invoice) {
+            setInvoiceSettings({
+                invoicePrefix: settings.invoice.prefix || 'INV-',
+                paymentTerms: settings.invoice.paymentTerms || 'Due on receipt',
+                footerNotes: settings.invoice.footerNotes || 'Thank you for your business!',
+                signature: settings.invoice.signature || null
+            });
+        }
+    }, [settings]);
 
     // Tabs configuration
     const tabs = [
@@ -138,17 +139,38 @@ const Settings = () => {
     };
 
     // Save Business Profile
-    const handleSaveBusinessProfile = () => {
-        updateSettings({ business: businessProfile });
-        toast.success('Business profile saved!');
+    const handleSaveBusinessProfile = async () => {
+        try {
+            setLoading(true);
+            await updateSettings({ business: businessProfile });
+            toast.success('Business profile saved!');
+        } catch (error) {
+            toast.error('Failed to save business profile');
+        } finally {
+            setLoading(false);
+        }
     };
 
     // const handleSaveRentalDefaults = ...
 
     // Save Invoice Settings
-    const handleSaveInvoiceSettings = () => {
-        updateSettings({ invoice: invoiceSettings });
-        toast.success('Invoice settings saved!');
+    const handleSaveInvoiceSettings = async () => {
+        try {
+            setLoading(true);
+            await updateSettings({
+                invoice: {
+                    prefix: invoiceSettings.invoicePrefix,
+                    paymentTerms: invoiceSettings.paymentTerms,
+                    footerNotes: invoiceSettings.footerNotes,
+                    signature: invoiceSettings.signature
+                }
+            });
+            toast.success('Invoice settings saved!');
+        } catch (error) {
+            toast.error('Failed to save invoice settings');
+        } finally {
+            setLoading(false);
+        }
     };
 
     // File Upload Handler
@@ -589,83 +611,6 @@ const Settings = () => {
                                     <Lock size={16} className="mr-2" /> Update Password
                                 </Button>
                             </div>
-                        </Card>
-
-                        {/* Active Sessions Section */}
-                        <div className="flex items-center gap-2 mb-4 mt-8">
-                            <div className="p-2 rounded-lg bg-blue-500/10">
-                                <Smartphone className="text-blue-500" size={20} />
-                            </div>
-                            <h2 className="text-xl font-semibold text-foreground">Active Sessions</h2>
-                        </div>
-
-                        <Card className="p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <p className="text-muted-foreground text-sm">Devices currently logged into your account.</p>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={async () => {
-                                        try {
-                                            await sessionsApi.revokeAll();
-                                            toast.success('All other sessions logged out');
-                                            fetchSessions();
-                                        } catch {
-                                            toast.error('Failed to logout sessions');
-                                        }
-                                    }}
-                                    className="text-red-500 border-red-500/30 hover:bg-red-500/10"
-                                >
-                                    <LogOut size={14} className="mr-1" /> Logout All
-                                </Button>
-                            </div>
-
-                            {sessionsLoading ? (
-                                <div className="text-center py-8 text-muted-foreground">Loading sessions...</div>
-                            ) : sessions.length === 0 ? (
-                                <div className="text-center py-8 text-muted-foreground">No active sessions found</div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {sessions.map((session) => (
-                                        <div
-                                            key={session._id}
-                                            className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/20"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 rounded-lg bg-primary/10">
-                                                    {session.device_info?.includes('Mobile') ? (
-                                                        <Smartphone size={18} className="text-primary" />
-                                                    ) : (
-                                                        <Monitor size={18} className="text-primary" />
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium text-foreground">{session.device_info}</p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        IP: {session.ip_address} • Last active: {new Date(session.last_active).toLocaleString()}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={async () => {
-                                                    try {
-                                                        await sessionsApi.revoke(session._id);
-                                                        toast.success('Session logged out');
-                                                        fetchSessions();
-                                                    } catch {
-                                                        toast.error('Failed to logout session');
-                                                    }
-                                                }}
-                                                className="text-red-500 hover:bg-red-500/10"
-                                            >
-                                                <Trash2 size={16} />
-                                            </Button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
                         </Card>
                     </section>
                 )

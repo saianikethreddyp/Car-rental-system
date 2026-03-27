@@ -1,19 +1,45 @@
-import React, { useRef } from 'react';
-import { X, Download, Printer } from 'lucide-react';
+import React, { useRef, useEffect, useState } from 'react';
+import { X, Download, Printer, CheckCircle, Loader2 } from 'lucide-react';
 import Button from '../ui/Button';
 import InvoiceTemplate from './InvoiceTemplate';
 import { useSettings } from '../../context/SettingsContext';
+import { invoicesApi } from '../../api/client';
+import toast from 'react-hot-toast';
 
 const InvoiceModal = ({ isOpen, onClose, rental }) => {
     const invoiceRef = useRef(null);
-
     const { settings } = useSettings();
     const prefix = settings?.invoice?.prefix || 'INV-';
 
+    const [backendInvoice, setBackendInvoice] = useState(null);
+    const [saving, setSaving] = useState(false);
+
     if (!isOpen || !rental) return null;
 
-    // Generate invoice number from rental id and date
-    const invoiceNumber = `${prefix}${String(rental.id).slice(0, 8).toUpperCase()}`;
+    // Fallback invoice number (used if backend hasn't generated one yet)
+    const invoiceNumber = backendInvoice?.invoice_number || `${prefix}${String(rental._id || rental.id).slice(0, 8).toUpperCase()}`;
+
+    // Auto-generate invoice in backend when modal opens
+    useEffect(() => {
+        const generateBackendInvoice = async () => {
+            if (!rental?._id && !rental?.id) return;
+            setSaving(true);
+            try {
+                const rentalId = rental._id || rental.id;
+                const invoice = await invoicesApi.generate(rentalId);
+                setBackendInvoice(invoice);
+            } catch (error) {
+                console.error('Failed to generate backend invoice:', error);
+                // Still allow viewing — the frontend template works without a backend record
+            } finally {
+                setSaving(false);
+            }
+        };
+
+        if (isOpen && rental) {
+            generateBackendInvoice();
+        }
+    }, [isOpen, rental]);
 
     const handlePrint = () => {
         const printContent = document.getElementById('invoice-content');
@@ -25,7 +51,7 @@ const InvoiceModal = ({ isOpen, onClose, rental }) => {
             <html>
             <head>
                 <title>Invoice ${invoiceNumber}</title>
-                <script src="https://cdn.tailwindcss.com"></script>
+                <script src="https://cdn.tailwindcss.com"><\/script>
                 <style>
                     @media print {
                         body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -40,7 +66,7 @@ const InvoiceModal = ({ isOpen, onClose, rental }) => {
                         window.print();
                         window.close();
                     }, 500);
-                </script>
+                <\/script>
             </body>
             </html>
         `);
@@ -56,8 +82,8 @@ const InvoiceModal = ({ isOpen, onClose, rental }) => {
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Invoice ${invoiceNumber} - Niyam</title>
-                <script src="https://cdn.tailwindcss.com"></script>
+                <title>Invoice ${invoiceNumber} - Download</title>
+                <script src="https://cdn.tailwindcss.com"><\/script>
                 <style>
                     @media print {
                         body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -71,7 +97,7 @@ const InvoiceModal = ({ isOpen, onClose, rental }) => {
                     setTimeout(() => {
                         window.print();
                     }, 500);
-                </script>
+                <\/script>
             </body>
             </html>
         `);
@@ -86,18 +112,22 @@ const InvoiceModal = ({ isOpen, onClose, rental }) => {
                 onClick={onClose}
             ></div>
 
-            {/* Modal Content - slides up on mobile, scales in on desktop */}
+            {/* Modal Content */}
             <div className="relative w-full md:max-w-3xl bg-white rounded-t-2xl md:rounded-xl shadow-2xl flex flex-col max-h-[95vh] md:max-h-[90vh] animate-slide-up md:animate-scale-in">
                 {/* Mobile Drag Handle */}
                 <div className="md:hidden flex justify-center pt-2 pb-1">
                     <div className="w-10 h-1 bg-gray-300 rounded-full"></div>
                 </div>
 
-                {/* Header - responsive layout */}
+                {/* Header */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border-b border-gray-200 bg-gray-50 md:rounded-t-xl gap-3">
                     <div>
                         <h3 className="text-lg font-semibold text-gray-900">Invoice Preview</h3>
-                        <p className="text-sm text-gray-500">{invoiceNumber}</p>
+                        <p className="text-sm text-gray-500 flex items-center gap-2">
+                            {invoiceNumber}
+                            {saving && <Loader2 size={14} className="animate-spin text-gray-400" />}
+                            {backendInvoice && !saving && <CheckCircle size={14} className="text-green-500" />}
+                        </p>
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         <Button
@@ -107,8 +137,7 @@ const InvoiceModal = ({ isOpen, onClose, rental }) => {
                             className="gap-2 flex-1 sm:flex-none touch-manipulation"
                         >
                             <Printer size={16} />
-                            <span className="hidden sm:inline">Print</span>
-                            <span className="sm:hidden">Print</span>
+                            <span>Print</span>
                         </Button>
                         <Button
                             size="sm"

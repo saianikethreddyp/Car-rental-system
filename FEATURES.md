@@ -1,6 +1,6 @@
 # Niyam - Feature Documentation
 
-A comprehensive Car Rental Management System built with React and Supabase.
+A comprehensive Car Rental Management System built with React.
 
 ---
 
@@ -251,4 +251,4 @@ customers (
 
 ---
 
-**Built with:** React, Vite, Supabase, Tailwind CSS, Lucide Icons
+**Built with:** React, Vite, Tailwind CSS, Lucide Icons
