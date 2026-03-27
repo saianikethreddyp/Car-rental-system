@@ -28,6 +28,10 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         try {
             const data = await api.post('/auth/login', { email, password });
+            // Store token in localStorage for Authorization header (cross-origin support)
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+            }
             setUser(data);
             return { success: true };
         } catch (error) {
@@ -42,6 +46,10 @@ export const AuthProvider = ({ children }) => {
     const signup = async (name, email, password) => {
         try {
             const data = await api.post('/auth/signup', { name, email, password });
+            // Store token in localStorage for Authorization header (cross-origin support)
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+            }
             setUser(data);
             console.log(data);
             return { success: true };
@@ -60,6 +68,7 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             console.error('Logout failed:', error);
         }
+        localStorage.removeItem('token');
         setUser(null);
     };
 
