@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Create axios instance
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'https://backend-car-rental-tesg.onrender.com/api',
+    baseURL: import.meta.env.VITE_API_URL,
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json'
@@ -100,7 +100,7 @@ export const uploadApi = {
     }
 };
 
-// Removed sessionsApi
+
 
 export const authApi = {
     updatePassword: (data) => api.put('/auth/update-password', data),
